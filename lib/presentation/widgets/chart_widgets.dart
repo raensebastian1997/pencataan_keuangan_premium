@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../core/utils/color_utils.dart';
 import '../../core/utils/currency_formatter.dart';
@@ -37,7 +37,7 @@ class ExpensePieChart extends StatelessWidget {
         final width = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width - 56;
-        final chartSize = width <= 0 ? 300.0 : min(width, 340.0);
+        final chartSize = width <= 0 ? 300.0 : min(width, 340.0).toDouble();
         final outerRadius = chartSize * 0.27;
         final centerRadius = chartSize * 0.16;
         final sectionGap = chartSize < 280 ? 0.7 : 1.2;
@@ -248,9 +248,10 @@ class _DonutLabelPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      final textX = anchor.isRight
+      final double textX = anchor.isRight
           ? min(size.width - textPainter.width - 2, center.dx + outerRadius + 38)
-          : max(2, center.dx - outerRadius - 38 - textPainter.width);
+              .toDouble()
+          : max(2, center.dx - outerRadius - 38 - textPainter.width).toDouble();
       final textOffset = Offset(textX, anchor.labelY - textPainter.height / 2);
       final elbowX = anchor.isRight
           ? textOffset.dx - 8
@@ -326,13 +327,13 @@ class _DonutLabelPainter extends CustomPainter {
     for (var index = 1; index < anchors.length; index++) {
       final previous = anchors[index - 1];
       final current = anchors[index];
-      current.labelY = max(current.labelY, previous.labelY + gap);
+      current.labelY = max(current.labelY, previous.labelY + gap).toDouble();
     }
 
     final overflow = anchors.last.labelY - maxY;
     if (overflow > 0) {
       for (final anchor in anchors) {
-        anchor.labelY = max(minY, anchor.labelY - overflow);
+        anchor.labelY = max(minY, anchor.labelY - overflow).toDouble();
       }
     }
   }
