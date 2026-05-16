@@ -1,7 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/services/financial_notification_service.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/transaction.dart';
+import '../../domain/entities/transaction_type.dart';
 import '../../domain/repositories/category_repository.dart';
 import '../../domain/repositories/transaction_repository.dart';
 import 'cubit_status.dart';
@@ -50,11 +52,12 @@ class TransactionState {
 }
 
 class TransactionCubit extends Cubit<TransactionState> {
-  TransactionCubit(this._transactions, this._categories)
+  TransactionCubit(this._transactions, this._categories, this._notifications)
     : super(const TransactionState());
 
   final TransactionRepository _transactions;
   final CategoryRepository _categories;
+  final FinancialNotificationService _notifications;
 
   Future<void> loadTransactions({
     DateTime? startDate,
@@ -94,10 +97,25 @@ class TransactionCubit extends Cubit<TransactionState> {
     try {
       await _transactions.saveTransaction(transaction);
       await loadTransactions();
+      final label = transaction.type == TransactionType.income
+          ? 'Pemasukan'
+          : 'Pengeluaran';
+      await _notifyInputSaved(
+        'Transaksi tersimpan',
+        '$label berhasil disimpan.',
+      );
     } catch (error) {
       emit(
         state.copyWith(status: CubitStatus.failure, message: error.toString()),
       );
+    }
+  }
+
+  Future<void> _notifyInputSaved(String title, String body) async {
+    try {
+      await _notifications.showInputSavedNotification(title: title, body: body);
+    } catch (_) {
+      // Notification failures should not block saved data.
     }
   }
 

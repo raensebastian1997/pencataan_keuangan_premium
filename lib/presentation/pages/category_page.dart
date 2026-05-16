@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/utils/color_utils.dart';
+import '../../core/utils/material_icon_resolver.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/transaction_type.dart';
 import '../cubits/category_cubit.dart';
@@ -153,9 +154,8 @@ class _CategorySection extends StatelessWidget {
                   backgroundColor: color.withValues(alpha: 0.16),
                   foregroundColor: color,
                   child: Icon(
-                    IconData(
+                    MaterialIconResolver.fromCodePoint(
                       category.iconCodePoint,
-                      fontFamily: 'MaterialIcons',
                     ),
                   ),
                 ),

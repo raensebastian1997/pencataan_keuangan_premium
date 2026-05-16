@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/constants/app_constants.dart';
+import 'core/navigation/app_navigator.dart';
 import 'core/theme/app_theme.dart';
 import 'injection_container.dart';
 import 'presentation/cubits/advisor_cubit.dart';
@@ -35,6 +36,7 @@ class MoneyTrackerApp extends StatelessWidget {
       child: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, state) {
           return MaterialApp(
+            navigatorKey: appNavigatorKey,
             title: AppConstants.appName,
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light(),

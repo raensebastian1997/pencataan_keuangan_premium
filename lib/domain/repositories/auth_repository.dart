@@ -6,11 +6,9 @@ abstract class AuthRepository {
   Future<UserAccount> register({
     required String fullName,
     required String email,
+    required String whatsappNumber,
     required String password,
   });
-  Future<UserAccount?> login({
-    required String email,
-    required String password,
-  });
+  Future<UserAccount?> login({required String email, required String password});
   Future<void> logout();
 }

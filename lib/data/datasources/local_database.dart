@@ -7,7 +7,7 @@ import '../../domain/entities/transaction_type.dart';
 
 class LocalDatabase {
   static const _databaseName = 'money_tracker.db';
-  static const _databaseVersion = 2;
+  static const _databaseVersion = 3;
 
   Database? _database;
 
@@ -79,6 +79,8 @@ class LocalDatabase {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await _createUsersTable(db);
+    } else if (oldVersion < 3) {
+      await _addWhatsappNumberToUsers(db);
     }
   }
 
@@ -89,10 +91,17 @@ class LocalDatabase {
         full_name TEXT NOT NULL,
         email TEXT NOT NULL,
         email_lower TEXT NOT NULL UNIQUE,
+        whatsapp_number TEXT NOT NULL DEFAULT '',
         password_hash TEXT NOT NULL,
         created_at TEXT NOT NULL
       )
     ''');
+  }
+
+  Future<void> _addWhatsappNumberToUsers(Database db) async {
+    await db.execute(
+      "ALTER TABLE users ADD COLUMN whatsapp_number TEXT NOT NULL DEFAULT ''",
+    );
   }
 
   Future<void> _seedCategories(Database db) async {

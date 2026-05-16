@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/services/financial_notification_service.dart';
 import '../../core/utils/date_time_utils.dart';
 import '../../domain/entities/goal.dart';
 import '../../domain/entities/report_data.dart';
@@ -56,12 +57,17 @@ class DashboardState {
 }
 
 class DashboardCubit extends Cubit<DashboardState> {
-  DashboardCubit(this._transactions, this._budgets, this._goals)
-    : super(const DashboardState());
+  DashboardCubit(
+    this._transactions,
+    this._budgets,
+    this._goals,
+    this._notifications,
+  ) : super(const DashboardState());
 
   final TransactionRepository _transactions;
   final BudgetRepository _budgets;
   final GoalRepository _goals;
+  final FinancialNotificationService _notifications;
 
   Future<void> loadDashboard() async {
     emit(state.copyWith(status: CubitStatus.loading));
@@ -86,6 +92,7 @@ class DashboardCubit extends Cubit<DashboardState> {
       final monthlyComparison = await _transactions.getMonthlyComparison(6);
       final budgets = await _budgets.getBudgets(now.month, now.year);
       final goals = await _goals.getGoals();
+      final netBalance = income - expense;
 
       final budgetUsages = <BudgetUsage>[];
       for (final budget in budgets) {
@@ -108,6 +115,11 @@ class DashboardCubit extends Cubit<DashboardState> {
           goals: goals,
         ),
       );
+      try {
+        await _notifications.notifyIfBalanceIsNegative(netBalance);
+      } catch (_) {
+        // Notification failures should not block dashboard data.
+      }
     } catch (error) {
       emit(
         state.copyWith(status: CubitStatus.failure, message: error.toString()),

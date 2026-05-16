@@ -1,7 +1,9 @@
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/services/financial_notification_service.dart';
 import 'data/datasources/ai_advisor_remote_datasource.dart';
 import 'data/datasources/local_database.dart';
 import 'data/repositories/advisor_ai_repository_impl.dart';
@@ -32,6 +34,9 @@ Future<void> init() async {
 
   sl.registerLazySingleton<SharedPreferences>(() => prefs);
   sl.registerLazySingleton<http.Client>(() => http.Client());
+  sl.registerLazySingleton<FlutterLocalNotificationsPlugin>(
+    () => FlutterLocalNotificationsPlugin(),
+  );
   sl.registerLazySingleton<LocalDatabase>(() => LocalDatabase());
   sl.registerLazySingleton<AiAdvisorRemoteDataSource>(
     () => AiAdvisorRemoteDataSource(sl()),
@@ -49,16 +54,21 @@ Future<void> init() async {
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(sl(), sl()),
   );
+  sl.registerLazySingleton<FinancialNotificationService>(
+    () => FinancialNotificationService(sl(), sl(), sl()),
+  );
   sl.registerLazySingleton<AdvisorAiRepository>(
     () => AdvisorAiRepositoryImpl(sl()),
   );
 
-  sl.registerFactory(() => AuthCubit(sl()));
+  sl.registerFactory(() => AuthCubit(sl(), sl()));
   sl.registerFactory(() => SettingsCubit(sl()));
-  sl.registerFactory(() => CategoryCubit(sl()));
-  sl.registerFactory(() => TransactionCubit(sl(), sl()));
-  sl.registerFactory(() => BudgetCubit(sl(), sl(), sl()));
-  sl.registerFactory(() => GoalCubit(sl()));
-  sl.registerFactory(() => DashboardCubit(sl(), sl(), sl()));
+  sl.registerFactory(() => CategoryCubit(sl(), sl()));
+  sl.registerFactory(() => TransactionCubit(sl(), sl(), sl()));
+  sl.registerFactory(() => BudgetCubit(sl(), sl(), sl(), sl()));
+  sl.registerFactory(() => GoalCubit(sl(), sl()));
+  sl.registerFactory(() => DashboardCubit(sl(), sl(), sl(), sl()));
   sl.registerFactory(() => AdvisorCubit(sl(), sl(), sl(), sl(), sl(), sl()));
+
+  await sl<FinancialNotificationService>().initialize();
 }

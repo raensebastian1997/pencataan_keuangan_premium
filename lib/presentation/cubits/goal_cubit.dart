@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/services/financial_notification_service.dart';
 import '../../domain/entities/goal.dart';
 import '../../domain/repositories/goal_repository.dart';
 import 'cubit_status.dart';
@@ -29,9 +30,10 @@ class GoalState {
 }
 
 class GoalCubit extends Cubit<GoalState> {
-  GoalCubit(this._repository) : super(const GoalState());
+  GoalCubit(this._repository, this._notifications) : super(const GoalState());
 
   final GoalRepository _repository;
+  final FinancialNotificationService _notifications;
 
   Future<void> loadGoals() async {
     emit(state.copyWith(status: CubitStatus.loading));
@@ -49,10 +51,22 @@ class GoalCubit extends Cubit<GoalState> {
     try {
       await _repository.saveGoal(goal);
       await loadGoals();
+      await _notifyInputSaved(
+        'Goal tersimpan',
+        '${goal.name} berhasil disimpan.',
+      );
     } catch (error) {
       emit(
         state.copyWith(status: CubitStatus.failure, message: error.toString()),
       );
+    }
+  }
+
+  Future<void> _notifyInputSaved(String title, String body) async {
+    try {
+      await _notifications.showInputSavedNotification(title: title, body: body);
+    } catch (_) {
+      // Notification failures should not block saved data.
     }
   }
 

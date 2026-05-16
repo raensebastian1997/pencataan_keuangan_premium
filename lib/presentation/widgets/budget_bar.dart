@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/utils/color_utils.dart';
 import '../../core/utils/currency_formatter.dart';
+import '../../core/utils/material_icon_resolver.dart';
 import '../../domain/entities/report_data.dart';
 
 class BudgetBar extends StatelessWidget {
@@ -35,10 +36,9 @@ class BudgetBar extends StatelessWidget {
                   backgroundColor: categoryColor.withValues(alpha: 0.16),
                   foregroundColor: categoryColor,
                   child: Icon(
-                    IconData(
+                    MaterialIconResolver.fromCodePoint(
                       usage.budget.categoryIconCodePoint ??
                           Icons.category.codePoint,
-                      fontFamily: 'MaterialIcons',
                     ),
                     size: 20,
                   ),

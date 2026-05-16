@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/services/financial_notification_service.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/repositories/category_repository.dart';
 import 'cubit_status.dart';
@@ -29,9 +30,11 @@ class CategoryState {
 }
 
 class CategoryCubit extends Cubit<CategoryState> {
-  CategoryCubit(this._repository) : super(const CategoryState());
+  CategoryCubit(this._repository, this._notifications)
+    : super(const CategoryState());
 
   final CategoryRepository _repository;
+  final FinancialNotificationService _notifications;
 
   Future<void> loadCategories() async {
     emit(state.copyWith(status: CubitStatus.loading));
@@ -49,10 +52,22 @@ class CategoryCubit extends Cubit<CategoryState> {
     try {
       await _repository.saveCategory(category);
       await loadCategories();
+      await _notifyInputSaved(
+        'Kategori tersimpan',
+        '${category.name} berhasil disimpan.',
+      );
     } catch (error) {
       emit(
         state.copyWith(status: CubitStatus.failure, message: error.toString()),
       );
+    }
+  }
+
+  Future<void> _notifyInputSaved(String title, String body) async {
+    try {
+      await _notifications.showInputSavedNotification(title: title, body: body);
+    } catch (_) {
+      // Notification failures should not block saved data.
     }
   }
 

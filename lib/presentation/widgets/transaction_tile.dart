@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/utils/color_utils.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_time_utils.dart';
+import '../../core/utils/material_icon_resolver.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/entities/transaction_type.dart';
 
@@ -42,9 +43,8 @@ class TransactionTile extends StatelessWidget {
                 backgroundColor: categoryColor.withValues(alpha: 0.16),
                 foregroundColor: categoryColor,
                 child: Icon(
-                  IconData(
+                  MaterialIconResolver.fromCodePoint(
                     transaction.categoryIconCodePoint ?? Icons.category.codePoint,
-                    fontFamily: 'MaterialIcons',
                   ),
                 ),
               ),

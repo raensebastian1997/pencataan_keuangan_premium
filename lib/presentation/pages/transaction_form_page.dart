@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/utils/color_utils.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_time_utils.dart';
+import '../../core/utils/material_icon_resolver.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/entities/transaction_type.dart';
@@ -1165,7 +1166,7 @@ class _CategoryChip extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
-                IconData(category.iconCodePoint, fontFamily: 'MaterialIcons'),
+                MaterialIconResolver.fromCodePoint(category.iconCodePoint),
                 size: 18,
                 color: color,
               ),

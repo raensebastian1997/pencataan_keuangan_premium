@@ -23,7 +23,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<UserAccount?> getSessionUser() async {
-    final sessionUserId = _preferences.getInt(AppConstants.authSessionUserIdKey);
+    final sessionUserId = _preferences.getInt(
+      AppConstants.authSessionUserIdKey,
+    );
     if (sessionUserId == null) {
       return null;
     }
@@ -39,6 +41,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<UserAccount> register({
     required String fullName,
     required String email,
+    required String whatsappNumber,
     required String password,
   }) async {
     final normalizedEmail = email.trim().toLowerCase();
@@ -51,6 +54,7 @@ class AuthRepositoryImpl implements AuthRepository {
       'full_name': fullName.trim(),
       'email': email.trim(),
       'email_lower': normalizedEmail,
+      'whatsapp_number': _normalizeWhatsappNumber(whatsappNumber),
       'password_hash': _hashPassword(password),
       'created_at': DateTime.now().toIso8601String(),
     });
@@ -87,5 +91,16 @@ class AuthRepositoryImpl implements AuthRepository {
 
   String _hashPassword(String password) {
     return sha256.convert(utf8.encode(password)).toString();
+  }
+
+  String _normalizeWhatsappNumber(String value) {
+    var number = value.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (number.startsWith('+')) {
+      number = number.substring(1);
+    }
+    if (number.startsWith('0')) {
+      return '62${number.substring(1)}';
+    }
+    return number;
   }
 }

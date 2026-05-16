@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/services/financial_notification_service.dart';
 import '../../domain/entities/user_account.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'cubit_status.dart';
@@ -45,9 +46,10 @@ class AuthState {
 }
 
 class AuthCubit extends Cubit<AuthState> {
-  AuthCubit(this._repository) : super(const AuthState());
+  AuthCubit(this._repository, this._notifications) : super(const AuthState());
 
   final AuthRepository _repository;
+  final FinancialNotificationService _notifications;
 
   Future<void> checkAuthStatus() async {
     emit(
@@ -108,6 +110,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> register({
     required String fullName,
     required String email,
+    required String whatsappNumber,
     required String password,
   }) async {
     emit(
@@ -121,6 +124,7 @@ class AuthCubit extends Cubit<AuthState> {
       final user = await _repository.register(
         fullName: fullName,
         email: email,
+        whatsappNumber: whatsappNumber,
         password: password,
       );
       emit(
@@ -131,6 +135,10 @@ class AuthCubit extends Cubit<AuthState> {
           user: user,
           clearMessage: true,
         ),
+      );
+      await _notifyInputSaved(
+        'Akun tersimpan',
+        'Data register berhasil disimpan.',
       );
     } catch (error) {
       emit(
@@ -144,10 +152,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     emit(
       state.copyWith(
         status: CubitStatus.loading,
@@ -224,5 +229,13 @@ class AuthCubit extends Cubit<AuthState> {
         clearMessage: true,
       ),
     );
+  }
+
+  Future<void> _notifyInputSaved(String title, String body) async {
+    try {
+      await _notifications.showInputSavedNotification(title: title, body: body);
+    } catch (_) {
+      // Notification failures should not block saved data.
+    }
   }
 }

@@ -1,9 +1,16 @@
+import 'dart:io';
+
+import 'package:excel/excel.dart' as xlsx;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/utils/color_utils.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_time_utils.dart';
+import '../../core/utils/material_icon_resolver.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/entities/transaction_type.dart';
@@ -84,6 +91,13 @@ class _TransactionsPageState extends State<TransactionsPage> {
                       netBalance: netBalance,
                       selectedCategory: selectedCategory,
                       onFilterTap: () => _openFilterSheet(state.categories),
+                      onShareTap: () => _shareExcelReport(
+                        transactions: transactions,
+                        filterLabel: _filterLabel(state.categories),
+                        totalIncome: totalIncome,
+                        totalExpense: totalExpense,
+                        netBalance: netBalance,
+                      ),
                       onAddTap: () => _openForm(),
                       onScanTap: () => _openForm(startWithOcr: true),
                     ),
@@ -345,9 +359,8 @@ class _TransactionsPageState extends State<TransactionsPage> {
                             ...categories.map(
                               (category) => _FilterChoiceChip(
                                 label: category.name,
-                                icon: IconData(
+                                icon: MaterialIconResolver.fromCodePoint(
                                   category.iconCodePoint,
-                                  fontFamily: 'MaterialIcons',
                                 ),
                                 selected: selectedCategoryId == category.id,
                                 color: ColorUtils.fromHex(category.colorHex),
@@ -428,6 +441,131 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
   Future<void> _refreshCurrentView() async {
     await _applyFilters();
+  }
+
+  Future<void> _shareExcelReport({
+    required List<FinancialTransaction> transactions,
+    required String filterLabel,
+    required double totalIncome,
+    required double totalExpense,
+    required double netBalance,
+  }) async {
+    if (transactions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak ada transaksi untuk dibagikan.')),
+      );
+      return;
+    }
+
+    try {
+      final file = await _createExcelReport(
+        transactions: transactions,
+        filterLabel: filterLabel,
+        totalIncome: totalIncome,
+        totalExpense: totalExpense,
+        netBalance: netBalance,
+      );
+      await SharePlus.instance.share(
+        ShareParams(
+          title: 'Bagikan report keuangan',
+          subject: 'Report Keuangan NoteUang Me',
+          text: 'Report keuangan NoteUang Me - $filterLabel',
+          files: [
+            XFile(
+              file.path,
+              mimeType:
+                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ),
+          ],
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal membuat report Excel: $error')),
+      );
+    }
+  }
+
+  Future<File> _createExcelReport({
+    required List<FinancialTransaction> transactions,
+    required String filterLabel,
+    required double totalIncome,
+    required double totalExpense,
+    required double netBalance,
+  }) async {
+    final excel = xlsx.Excel.createExcel();
+    excel.rename('Sheet1', 'Report');
+    final sheet = excel['Report'];
+
+    sheet.appendRow([xlsx.TextCellValue('Report Keuangan NoteUang Me')]);
+    sheet.appendRow([
+      xlsx.TextCellValue('Periode'),
+      xlsx.TextCellValue(filterLabel),
+    ]);
+    sheet.appendRow([
+      xlsx.TextCellValue('Dibuat'),
+      xlsx.TextCellValue(
+        DateFormat('dd MMM yyyy HH:mm', 'id_ID').format(DateTime.now()),
+      ),
+    ]);
+    sheet.appendRow([]);
+    sheet.appendRow([
+      xlsx.TextCellValue('Total Pemasukan'),
+      xlsx.DoubleCellValue(totalIncome),
+    ]);
+    sheet.appendRow([
+      xlsx.TextCellValue('Total Pengeluaran'),
+      xlsx.DoubleCellValue(totalExpense),
+    ]);
+    sheet.appendRow([
+      xlsx.TextCellValue('Saldo Bersih'),
+      xlsx.DoubleCellValue(netBalance),
+    ]);
+    sheet.appendRow([]);
+    sheet.appendRow([
+      xlsx.TextCellValue('Tanggal'),
+      xlsx.TextCellValue('Jenis'),
+      xlsx.TextCellValue('Kategori'),
+      xlsx.TextCellValue('Nominal'),
+      xlsx.TextCellValue('Catatan'),
+    ]);
+
+    for (final transaction in transactions) {
+      sheet.appendRow([
+        xlsx.TextCellValue(
+          DateFormat('dd MMM yyyy', 'id_ID').format(transaction.date),
+        ),
+        xlsx.TextCellValue(transaction.type.label),
+        xlsx.TextCellValue(transaction.categoryName ?? '-'),
+        xlsx.DoubleCellValue(
+          transaction.type == TransactionType.income
+              ? transaction.amount
+              : -transaction.amount,
+        ),
+        xlsx.TextCellValue((transaction.note ?? '').trim()),
+      ]);
+    }
+
+    sheet
+      ..setColumnWidth(0, 16)
+      ..setColumnWidth(1, 16)
+      ..setColumnWidth(2, 24)
+      ..setColumnWidth(3, 18)
+      ..setColumnWidth(4, 36);
+
+    final bytes = excel.save();
+    if (bytes == null) {
+      throw Exception('Gagal menyimpan workbook.');
+    }
+
+    final directory = await getTemporaryDirectory();
+    final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    final file = File('${directory.path}/report_keuangan_$timestamp.xlsx');
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
   }
 
   Future<void> _applyFilters() {
@@ -561,10 +699,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      IconData(
+                      MaterialIconResolver.fromCodePoint(
                         transaction.categoryIconCodePoint ??
                             Icons.category_rounded.codePoint,
-                        fontFamily: 'MaterialIcons',
+                        fallback: Icons.category_rounded,
                       ),
                       color: categoryColor,
                       size: 34,
@@ -675,6 +813,7 @@ class _TransactionsHero extends StatelessWidget {
     required this.netBalance,
     required this.selectedCategory,
     required this.onFilterTap,
+    required this.onShareTap,
     required this.onAddTap,
     required this.onScanTap,
   });
@@ -686,6 +825,7 @@ class _TransactionsHero extends StatelessWidget {
   final double netBalance;
   final FinanceCategory? selectedCategory;
   final VoidCallback onFilterTap;
+  final VoidCallback onShareTap;
   final VoidCallback onAddTap;
   final VoidCallback onScanTap;
 
@@ -760,13 +900,28 @@ class _TransactionsHero extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton.filled(
-                onPressed: onFilterTap,
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white.withValues(alpha: 0.18),
-                  foregroundColor: foreground,
-                ),
-                icon: const Icon(Icons.tune_rounded),
+              Row(
+                children: [
+                  IconButton.filled(
+                    onPressed: onShareTap,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.18),
+                      foregroundColor: foreground,
+                    ),
+                    icon: const Icon(Icons.ios_share_rounded),
+                    tooltip: 'Share report Excel',
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: onFilterTap,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.18),
+                      foregroundColor: foreground,
+                    ),
+                    icon: const Icon(Icons.tune_rounded),
+                    tooltip: 'Filter transaksi',
+                  ),
+                ],
               ),
             ],
           ),
@@ -812,9 +967,8 @@ class _TransactionsHero extends StatelessWidget {
               ),
               if (selectedCategory != null)
                 _HeroPill(
-                  icon: IconData(
+                  icon: MaterialIconResolver.fromCodePoint(
                     selectedCategory!.iconCodePoint,
-                    fontFamily: 'MaterialIcons',
                   ),
                   label: selectedCategory!.name,
                   foreground: foreground,
@@ -1033,7 +1187,7 @@ class _PeriodSelector extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final item = items[index];
           final isSelected = selectedPeriod == item.value;
@@ -1132,7 +1286,7 @@ class _CategoryScroller extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
         itemCount: categories.length + 1,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           if (index == 0) {
             return _CategoryShortcut(
@@ -1147,7 +1301,7 @@ class _CategoryScroller extends StatelessWidget {
           final category = categories[index - 1];
           return _CategoryShortcut(
             label: category.name,
-            icon: IconData(category.iconCodePoint, fontFamily: 'MaterialIcons'),
+            icon: MaterialIconResolver.fromCodePoint(category.iconCodePoint),
             selected: selectedCategoryId == category.id,
             color: ColorUtils.fromHex(category.colorHex),
             onTap: () => onSelected(category.id),
@@ -1344,10 +1498,10 @@ class _PremiumTransactionTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Icon(
-                  IconData(
+                  MaterialIconResolver.fromCodePoint(
                     transaction.categoryIconCodePoint ??
                         Icons.category_rounded.codePoint,
-                    fontFamily: 'MaterialIcons',
+                    fallback: Icons.category_rounded,
                   ),
                   color: categoryColor,
                 ),

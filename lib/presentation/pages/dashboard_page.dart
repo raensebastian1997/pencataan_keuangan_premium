@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
+import '../../core/services/financial_notification_service.dart';
 import '../../core/utils/color_utils.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_time_utils.dart';
+import '../../core/utils/material_icon_resolver.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/report_data.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/entities/transaction_type.dart';
+import '../../injection_container.dart';
 import '../cubits/advisor_cubit.dart';
 import '../cubits/category_cubit.dart';
 import '../cubits/cubit_status.dart';
@@ -16,8 +20,29 @@ import '../cubits/transaction_cubit.dart';
 import 'transactions_page.dart';
 import '../widgets/chart_widgets.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  int _notificationCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationCount();
+  }
+
+  Future<void> _loadNotificationCount() async {
+    final history = await sl<FinancialNotificationService>()
+        .getNotificationHistory();
+    if (mounted) {
+      setState(() => _notificationCount = history.length);
+    }
+  }
 
   Future<void> _openCategoryTransactions(
     BuildContext context,
@@ -48,6 +73,22 @@ class DashboardPage extends StatelessWidget {
       context,
       MaterialPageRoute(builder: (_) => TransactionsPage(initialPeriod: 'all')),
     );
+  }
+
+  Future<void> _openNotificationHistory(BuildContext context) async {
+    final history = await sl<FinancialNotificationService>()
+        .getNotificationHistory();
+    if (!context.mounted) {
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => _NotificationHistorySheet(items: history),
+    );
+    await _loadNotificationCount();
   }
 
   @override
@@ -86,6 +127,8 @@ class DashboardPage extends StatelessWidget {
                   balance: dashboard.netBalance,
                   income: dashboard.totalIncome,
                   expense: dashboard.totalExpense,
+                  notificationCount: _notificationCount,
+                  onOpenNotifications: () => _openNotificationHistory(context),
                 ),
                 const SizedBox(height: 14),
                 Padding(
@@ -148,16 +191,133 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
+class _NotificationHistorySheet extends StatelessWidget {
+  const _NotificationHistorySheet({required this.items});
+
+  final List<FinancialNotificationHistoryItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.72,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 2, 20, 14),
+              child: Text(
+                'Riwayat Notifikasi',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+            Expanded(
+              child: items.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Belum ada notifikasi.',
+                        style: TextStyle(color: scheme.onSurfaceVariant),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        0,
+                        16,
+                        16 + bottomPadding,
+                      ),
+                      itemCount: items.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        final isDanger = item.payload == 'negative_balance';
+                        final iconColor = isDanger
+                            ? scheme.error
+                            : scheme.primary;
+                        return Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHighest.withValues(
+                              alpha: 0.55,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                isDanger
+                                    ? Icons.warning_amber_rounded
+                                    : Icons.notifications_rounded,
+                                color: iconColor,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.title,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      item.body,
+                                      style: TextStyle(
+                                        color: scheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      DateFormat(
+                                        'dd MMM yyyy, HH:mm',
+                                        'id_ID',
+                                      ).format(item.createdAt),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: scheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _HeroCard extends StatefulWidget {
   const _HeroCard({
     required this.balance,
     required this.income,
     required this.expense,
+    required this.notificationCount,
+    required this.onOpenNotifications,
   });
 
   final double balance;
   final double income;
   final double expense;
+  final int notificationCount;
+  final VoidCallback onOpenNotifications;
 
   @override
   State<_HeroCard> createState() => _HeroCardState();
@@ -226,14 +386,34 @@ class _HeroCardState extends State<_HeroCard> {
                 ),
               ),
               const Spacer(),
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: onHero.withValues(alpha: isDark ? 0.12 : 0.20),
-                  shape: BoxShape.circle,
+              Material(
+                color: onHero.withValues(alpha: isDark ? 0.12 : 0.20),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: widget.onOpenNotifications,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      SizedBox(
+                        width: 42,
+                        height: 42,
+                        child: Icon(
+                          Icons.notifications_none_rounded,
+                          color: onHero,
+                        ),
+                      ),
+                      if (widget.notificationCount > 0)
+                        Positioned(
+                          right: -2,
+                          top: -3,
+                          child: _NotificationBadge(
+                            count: widget.notificationCount,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-                child: Icon(Icons.notifications_none_rounded, color: onHero),
               ),
             ],
           ),
@@ -303,6 +483,36 @@ class _HeroCardState extends State<_HeroCard> {
           const SizedBox(height: 14),
           _ActionPill(isDark: isDark),
         ],
+      ),
+    );
+  }
+}
+
+class _NotificationBadge extends StatelessWidget {
+  const _NotificationBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count > 99 ? '99+' : '$count';
+    return Container(
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.error,
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: Colors.white, width: 1.4),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          height: 1,
+        ),
       ),
     );
   }
@@ -522,7 +732,7 @@ class _FeatureItem extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                IconData(iconCodePoint, fontFamily: 'MaterialIcons'),
+                MaterialIconResolver.fromCodePoint(iconCodePoint),
                 size: 25,
               ),
             ),
@@ -1107,9 +1317,8 @@ class _RecentTransactionList extends StatelessWidget {
                 radius: 22,
                 backgroundColor: categoryColor.withValues(alpha: 0.14),
                 child: Icon(
-                  IconData(
+                  MaterialIconResolver.fromCodePoint(
                     item.categoryIconCodePoint ?? Icons.category.codePoint,
-                    fontFamily: 'MaterialIcons',
                   ),
                   color: categoryColor,
                 ),

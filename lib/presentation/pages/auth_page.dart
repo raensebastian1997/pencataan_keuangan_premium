@@ -18,6 +18,7 @@ class _AuthPageState extends State<AuthPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _whatsappController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
@@ -26,6 +27,7 @@ class _AuthPageState extends State<AuthPage> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _whatsappController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -35,9 +37,9 @@ class _AuthPageState extends State<AuthPage> {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state.status == CubitStatus.failure && state.message != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message!)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message!)));
         }
       },
       builder: (context, state) {
@@ -58,7 +60,11 @@ class _AuthPageState extends State<AuthPage> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF032A44), Color(0xFF056F87), Color(0xFF42A18A)],
+                    colors: [
+                      Color(0xFF032A44),
+                      Color(0xFF056F87),
+                      Color(0xFF42A18A),
+                    ],
                   ),
                 ),
               ),
@@ -102,11 +108,16 @@ class _AuthPageState extends State<AuthPage> {
                                   const _BrandHeader(),
                                   const SizedBox(height: 22),
                                   Text(
-                                    isRegister ? 'Buat Akun Pertama' : 'Masuk ke Akun',
-                                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w900,
-                                    ),
+                                    isRegister
+                                        ? 'Buat Akun Pertama'
+                                        : 'Masuk ke Akun',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w900,
+                                        ),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
@@ -114,7 +125,9 @@ class _AuthPageState extends State<AuthPage> {
                                         ? 'Data akun disimpan lokal di SQLite pada perangkat ini.'
                                         : 'Masuk untuk melanjutkan ke dashboard keuangan Anda.',
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.88),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.88,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 18),
@@ -122,7 +135,9 @@ class _AuthPageState extends State<AuthPage> {
                                     TextFormField(
                                       controller: _nameController,
                                       textInputAction: TextInputAction.next,
-                                      style: const TextStyle(color: Colors.white),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
                                       decoration: _inputDecoration(
                                         label: 'Nama lengkap',
                                         icon: Icons.person,
@@ -130,6 +145,29 @@ class _AuthPageState extends State<AuthPage> {
                                       validator: (value) {
                                         if ((value ?? '').trim().length < 3) {
                                           return 'Nama minimal 3 karakter.';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextFormField(
+                                      controller: _whatsappController,
+                                      textInputAction: TextInputAction.next,
+                                      keyboardType: TextInputType.phone,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        label: 'Nomor WhatsApp',
+                                        icon: Icons.phone_rounded,
+                                      ),
+                                      validator: (value) {
+                                        final digits = (value ?? '').replaceAll(
+                                          RegExp(r'[^0-9]'),
+                                          '',
+                                        );
+                                        if (digits.length < 10) {
+                                          return 'Masukkan nomor WhatsApp yang valid.';
                                         }
                                         return null;
                                       },
@@ -147,7 +185,8 @@ class _AuthPageState extends State<AuthPage> {
                                     ),
                                     validator: (value) {
                                       final email = (value ?? '').trim();
-                                      if (!email.contains('@') || !email.contains('.')) {
+                                      if (!email.contains('@') ||
+                                          !email.contains('.')) {
                                         return 'Masukkan email yang valid.';
                                       }
                                       return null;
@@ -165,7 +204,8 @@ class _AuthPageState extends State<AuthPage> {
                                       suffix: IconButton(
                                         onPressed: () {
                                           setState(() {
-                                            _obscurePassword = !_obscurePassword;
+                                            _obscurePassword =
+                                                !_obscurePassword;
                                           });
                                         },
                                         icon: Icon(
@@ -191,13 +231,19 @@ class _AuthPageState extends State<AuthPage> {
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 14,
                                         ),
-                                        backgroundColor: const Color(0xFFF8C85E),
-                                        foregroundColor: const Color(0xFF2A1A00),
+                                        backgroundColor: const Color(
+                                          0xFFF8C85E,
+                                        ),
+                                        foregroundColor: const Color(
+                                          0xFF2A1A00,
+                                        ),
                                         textStyle: const TextStyle(
                                           fontWeight: FontWeight.w800,
                                         ),
                                       ),
-                                      onPressed: isLoading ? null : () => _submit(context, state),
+                                      onPressed: isLoading
+                                          ? null
+                                          : () => _submit(context, state),
                                       child: isLoading
                                           ? const SizedBox(
                                               width: 20,
@@ -206,7 +252,11 @@ class _AuthPageState extends State<AuthPage> {
                                                 strokeWidth: 2.4,
                                               ),
                                             )
-                                          : Text(isRegister ? 'Daftar Sekarang' : 'Login'),
+                                          : Text(
+                                              isRegister
+                                                  ? 'Daftar Sekarang'
+                                                  : 'Login',
+                                            ),
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -217,16 +267,22 @@ class _AuthPageState extends State<AuthPage> {
                                             ? null
                                             : () {
                                                 if (isRegister) {
-                                                  context.read<AuthCubit>().openLogin();
+                                                  context
+                                                      .read<AuthCubit>()
+                                                      .openLogin();
                                                 } else {
-                                                  context.read<AuthCubit>().openRegister();
+                                                  context
+                                                      .read<AuthCubit>()
+                                                      .openRegister();
                                                 }
                                               },
                                         child: Text(
                                           isRegister
                                               ? 'Sudah punya akun? Login'
                                               : 'Belum punya akun? Register',
-                                          style: const TextStyle(color: Colors.white),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -257,6 +313,7 @@ class _AuthPageState extends State<AuthPage> {
       authCubit.register(
         fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
+        whatsappNumber: _whatsappController.text.trim(),
         password: _passwordController.text,
       );
       return;
