@@ -27,7 +27,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     DashboardPage(),
     TransactionsPage(),
     BudgetsPage(),
-    GoalsPage(),
+    // GoalsPage(),
     SettingsPage(),
   ];
 
@@ -163,13 +163,13 @@ class _FloatingBottomBar extends StatelessWidget {
                 color: selectedIndex == 2 ? Colors.white : inactiveColor,
               ),
             ),
-            IconButton(
-              onPressed: () => onSelected(3),
-              icon: Icon(
-                Icons.flag_rounded,
-                color: selectedIndex == 3 ? Colors.white : inactiveColor,
-              ),
-            ),
+            // IconButton(
+            //   onPressed: () => onSelected(3),
+            //   icon: Icon(
+            //     Icons.flag_rounded,
+            //     color: selectedIndex == 3 ? Colors.white : inactiveColor,
+            //   ),
+            // ),
             IconButton(
               onPressed: () => onSelected(4),
               icon: Icon(

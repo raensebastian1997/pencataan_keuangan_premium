@@ -53,6 +53,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
       color: colorScheme.surface,
@@ -127,8 +128,45 @@ class _TransactionsPageState extends State<TransactionsPage> {
                     if (transactions.isEmpty)
                       _EmptyTransactions(onAddTap: () => _openForm())
                     else
-                      ...listChildren,
-                    const SizedBox(height: 120),
+                      Container(
+                        padding: EdgeInsetsDirectional.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: isDark
+                                ? const [
+                                    Color(0xFF101820),
+                                    Color(0xFF173444),
+                                    Color(0xFF15616E),
+                                  ]
+                                : const [
+                                    Color(0xFF25A8E0),
+                                    Color(0xFF43B7D8),
+                                    Color(0xFF72D9C6),
+                                  ],
+                          ),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(34),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.primary.withValues(
+                                alpha: isDark ? 0.14 : 0.2,
+                              ),
+                              blurRadius: 28,
+                              offset: const Offset(0, 14),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            ...listChildren,
+                            const SizedBox(height: 120),
+                          ],
+                        ),
+                      ),
+                    // ...listChildren,
                   ],
                 ),
                 if (state.status == CubitStatus.loading)
@@ -1333,9 +1371,8 @@ class _CategoryShortcut extends StatelessWidget {
     return SizedBox(
       width: 78,
       child: Material(
-        color: selected
-            ? color.withValues(alpha: 0.14)
-            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: color.withValues(alpha: 0.14),
+
         borderRadius: BorderRadius.circular(22),
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
@@ -1344,11 +1381,11 @@ class _CategoryShortcut extends StatelessWidget {
             padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: selected
-                    ? color.withValues(alpha: 0.65)
-                    : colorScheme.outlineVariant.withValues(alpha: 0.55),
-              ),
+              // border: Border.all(
+              //   color: selected
+              //       ? color.withValues(alpha: 0.65)
+              //       : colorScheme.outlineVariant.withValues(alpha: 0.55),
+              // ),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1433,10 +1470,7 @@ class _DateSectionHeader extends StatelessWidget {
       children: [
         Text(
           AppDateUtils.dayMonthYear(date),
-          style: TextStyle(
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w900,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
         ),
         const SizedBox(width: 10),
         Expanded(child: Divider(color: colorScheme.outlineVariant)),
@@ -1471,22 +1505,21 @@ class _PremiumTransactionTile extends StatelessWidget {
 
     return Material(
       color: colorScheme.surface,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(24),
         onTap: onTap,
         child: Ink(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: colorScheme.outlineVariant),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.shadow.withValues(alpha: 0.045),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(14),
+            // boxShadow: [
+            //   BoxShadow(
+            //     color: colorScheme.shadow.withValues(alpha: 0.045),
+            //     blurRadius: 20,
+            //     offset: const Offset(0, 8),
+            //   ),
+            // ],
           ),
           child: Row(
             children: [

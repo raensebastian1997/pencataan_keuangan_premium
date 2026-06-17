@@ -148,29 +148,32 @@ class _CategorySection extends StatelessWidget {
         else
           ...categories.map((category) {
             final color = ColorUtils.fromHex(category.colorHex);
-            return Card(
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: color.withValues(alpha: 0.16),
-                  foregroundColor: color,
-                  child: Icon(
-                    MaterialIconResolver.fromCodePoint(
-                      category.iconCodePoint,
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Card(
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: color.withValues(alpha: 0.16),
+                    foregroundColor: color,
+                    child: Icon(
+                      MaterialIconResolver.fromCodePoint(
+                        category.iconCodePoint,
+                      ),
                     ),
                   ),
-                ),
-                title: Text(
-                  category.name,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                subtitle: Text(category.type.label),
-                trailing: PopupMenuButton<String>(
-                  onSelected: (value) =>
-                      value == 'edit' ? onEdit(category) : onDelete(category),
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(value: 'edit', child: Text('Edit')),
-                    PopupMenuItem(value: 'delete', child: Text('Hapus')),
-                  ],
+                  title: Text(
+                    category.name,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  subtitle: Text(category.type.label),
+                  trailing: PopupMenuButton<String>(
+                    onSelected: (value) =>
+                        value == 'edit' ? onEdit(category) : onDelete(category),
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(value: 'edit', child: Text('Edit')),
+                      PopupMenuItem(value: 'delete', child: Text('Hapus')),
+                    ],
+                  ),
                 ),
               ),
             );

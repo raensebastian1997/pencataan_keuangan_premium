@@ -122,7 +122,7 @@ class _AuthPageState extends State<AuthPage> {
                                   const SizedBox(height: 6),
                                   Text(
                                     isRegister
-                                        ? 'Data akun disimpan lokal di SQLite pada perangkat ini.'
+                                        ? ''
                                         : 'Masuk untuk melanjutkan ke dashboard keuangan Anda.',
                                     style: TextStyle(
                                       color: Colors.white.withValues(

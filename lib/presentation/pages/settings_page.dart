@@ -54,7 +54,9 @@ class SettingsPage extends StatelessWidget {
                     value: state.aiEnabled,
                     onChanged: state.hasAiApiKey
                         ? (value) async {
-                            await context.read<SettingsCubit>().setAiEnabled(value);
+                            await context.read<SettingsCubit>().setAiEnabled(
+                              value,
+                            );
                             await context.read<AdvisorCubit>().generateAdvice();
                           }
                         : null,
@@ -105,7 +107,7 @@ class SettingsPage extends StatelessWidget {
             leading: Icon(Icons.verified_user_outlined),
             title: Text('Financial Tracker & Future Advisor'),
             subtitle: Text(
-              'Data tersimpan lokal di SQLite. API key AI disimpan lokal di perangkat ini.',
+              'Data tersimpan lokal perangkat. API key AI disimpan lokal di perangkat ini.',
             ),
           ),
         ),
@@ -113,7 +115,7 @@ class SettingsPage extends StatelessWidget {
           builder: (context, authState) {
             final user = authState.user;
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Card(
                 child: ListTile(
                   leading: const Icon(Icons.account_circle_outlined),

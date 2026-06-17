@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Dokumen Bisnis Proses Aplikasi NoteUang Me</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      line-height: 1.45;
+      color: #111827;
+    }
+    h1 {
+      font-size: 22pt;
+      color: #0f4c81;
+      margin-bottom: 6pt;
+    }
+    h2 {
+      font-size: 16pt;
+      color: #0f4c81;
+      margin-top: 18pt;
+      margin-bottom: 6pt;
+      border-bottom: 1px solid #d1d5db;
+      padding-bottom: 3pt;
+    }
+    h3 {
+      font-size: 13pt;
+      color: #1f2937;
+      margin-top: 12pt;
+      margin-bottom: 4pt;
+    }
+    p {
+      margin: 4pt 0;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8pt 0 12pt;
+    }
+    th, td {
+      border: 1px solid #9ca3af;
+      padding: 6pt;
+      vertical-align: top;
+    }
+    th {
+      background: #e5f0fa;
+      font-weight: bold;
+    }
+    .meta td:first-child {
+      width: 30%;
+      font-weight: bold;
+      background: #f3f4f6;
+    }
+    .note {
+      background: #f8fafc;
+      border: 1px solid #d1d5db;
+      padding: 8pt;
+      margin: 8pt 0;
+    }
+    .small {
+      font-size: 9pt;
+      color: #4b5563;
+    }
+    ul, ol {
+      margin-top: 4pt;
+      margin-bottom: 8pt;
+    }
+    li {
+      margin: 3pt 0;
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 10pt;
+      background: #f3f4f6;
+      padding: 1pt 3pt;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dokumen Bisnis Proses Aplikasi NoteUang Me</h1>
+  <p class="small">Disusun berdasarkan kode aplikasi di proyek <code>money_tracker</code>, package Android <code>com.example.money_tracker</code>.</p>
+
+  <table class="meta">
+    <tr>
+      <td>Nama aplikasi</td>
+      <td>NoteUang Me</td>
+    </tr>
+    <tr>
+      <td>Nama proyek</td>
+      <td><code>money_tracker</code></td>
+    </tr>
+    <tr>
+      <td>Package Android</td>
+      <td><code>com.example.money_tracker</code></td>
+    </tr>
+    <tr>
+      <td>Platform</td>
+      <td>Flutter mobile app, dengan host Android <code>MainActivity</code></td>
+    </tr>
+    <tr>
+      <td>Versi aplikasi</td>
+      <td>1.0.0+1</td>
+    </tr>
+    <tr>
+      <td>Tanggal dokumen</td>
+      <td>5 Juni 2026</td>
+    </tr>
+    <tr>
+      <td>Sumber analisis</td>
+      <td>Kode pada folder <code>lib/</code>, <code>android/app/src/main/kotlin/com/example/money_tracker/</code>, dan konfigurasi <code>pubspec.yaml</code></td>
+    </tr>
+  </table>
+
+  <h2>1. Ringkasan Aplikasi</h2>
+  <p>
+    NoteUang Me adalah aplikasi pencatatan keuangan pribadi untuk mencatat pemasukan dan pengeluaran,
+    memantau saldo bersih bulanan, membuat anggaran per kategori, mengelola target keuangan, menampilkan
+    insight keuangan, serta menyiapkan laporan transaksi dalam format Excel.
+  </p>
+  <p>
+    Data utama aplikasi disimpan lokal di perangkat menggunakan SQLite. Preferensi seperti sesi login,
+    tema gelap, konfigurasi AI, API key AI, dan riwayat notifikasi disimpan menggunakan SharedPreferences.
+    Fitur AI bersifat opsional; jika API key tidak tersedia atau panggilan AI gagal, aplikasi tetap
+    memberikan analisis lokal.
+  </p>
+
+  <h2>2. Tujuan Bisnis</h2>
+  <ul>
+    <li>Membantu pengguna mencatat transaksi keuangan harian secara terstruktur.</li>
+    <li>Menghitung total pemasukan, total pengeluaran, dan saldo bersih dalam periode aktif.</li>
+    <li>Mengontrol pengeluaran melalui anggaran bulanan per kategori.</li>
+    <li>Membantu pengguna membuat dan memantau goal keuangan seperti dana darurat, liburan, rumah, atau investasi.</li>
+    <li>Menyediakan saran keuangan berbasis data transaksi, anggaran, dan goal.</li>
+    <li>Membuat laporan transaksi yang dapat dibagikan dalam format Excel.</li>
+    <li>Memberikan notifikasi saat data berhasil disimpan dan saat saldo bulan berjalan berada pada kondisi negatif.</li>
+  </ul>
+
+  <h2>3. Aktor dan Peran</h2>
+  <table>
+    <tr>
+      <th>Aktor</th>
+      <th>Peran</th>
+      <th>Interaksi Utama</th>
+    </tr>
+    <tr>
+      <td>Pengguna lokal</td>
+      <td>Pemilik data keuangan pribadi.</td>
+      <td>Register, login, mencatat transaksi, mengatur kategori, membuat anggaran, membuat goal, melihat dashboard, ekspor laporan, mengatur AI dan tema.</td>
+    </tr>
+    <tr>
+      <td>Sistem aplikasi</td>
+      <td>Memproses data, validasi, kalkulasi, penyimpanan, dan refresh tampilan.</td>
+      <td>Menghitung saldo, agregasi kategori, budget usage, progress goal, prediksi lokal, dan validasi form.</td>
+    </tr>
+    <tr>
+      <td>Layanan perangkat</td>
+      <td>Menyediakan kemampuan native perangkat.</td>
+      <td>SQLite, SharedPreferences, notifikasi lokal, kamera, galeri, OCR ML Kit, share file, dan WhatsApp link.</td>
+    </tr>
+    <tr>
+      <td>OpenAI API</td>
+      <td>Layanan eksternal opsional untuk analisis AI.</td>
+      <td>Dipakai hanya jika pengguna menyimpan API key dan mengaktifkan Analisis AI.</td>
+    </tr>
+  </table>
+
+  <h2>4. Modul dan Data Utama</h2>
+  <table>
+    <tr>
+      <th>Modul</th>
+      <th>Data Utama</th>
+      <th>Penyimpanan</th>
+      <th>Keterangan Proses</th>
+    </tr>
+    <tr>
+      <td>Autentikasi</td>
+      <td>Nama lengkap, email, nomor WhatsApp, password hash, tanggal dibuat, sesi user.</td>
+      <td>Tabel <code>users</code> dan SharedPreferences <code>auth_session_user_id</code>.</td>
+      <td>Register membuat user lokal pertama atau tambahan. Login memeriksa email dan password hash. Logout menghapus sesi.</td>
+    </tr>
+    <tr>
+      <td>Kategori</td>
+      <td>Nama kategori, tipe pemasukan/pengeluaran, ikon, warna.</td>
+      <td>Tabel <code>categories</code>.</td>
+      <td>Kategori awal otomatis dibuat saat database pertama kali dibuat. Kategori yang sudah digunakan transaksi atau anggaran tidak boleh dihapus.</td>
+    </tr>
+    <tr>
+      <td>Transaksi</td>
+      <td>Nominal, tipe, kategori, tanggal, catatan.</td>
+      <td>Tabel <code>transactions</code>.</td>
+      <td>Transaksi dapat dibuat, diedit, dihapus, difilter, dilihat detailnya, discan dari struk, dan diekspor ke Excel.</td>
+    </tr>
+    <tr>
+      <td>Anggaran</td>
+      <td>Kategori pengeluaran, bulan, tahun, batas anggaran.</td>
+      <td>Tabel <code>budgets</code>.</td>
+      <td>Satu kategori hanya punya satu anggaran untuk bulan dan tahun yang sama. Jika data sama disimpan lagi, sistem melakukan update.</td>
+    </tr>
+    <tr>
+      <td>Goal Keuangan</td>
+      <td>Nama goal, target nominal, tanggal target, jumlah terkumpul.</td>
+      <td>Tabel <code>goals</code>.</td>
+      <td>Sistem menghitung progress, sisa target, bulan tersisa, dan estimasi setoran bulanan.</td>
+    </tr>
+    <tr>
+      <td>Dashboard</td>
+      <td>Total pemasukan, total pengeluaran, saldo bersih, pengeluaran per kategori, perbandingan bulanan, budget usage, goal.</td>
+      <td>Data agregat dari transaksi, budget, goal, dan kategori.</td>
+      <td>Dashboard memuat data bulan berjalan dan grafik ringkasan untuk pengambilan keputusan cepat.</td>
+    </tr>
+    <tr>
+      <td>Advisor</td>
+      <td>Saran keuangan, projected balance, engine analisis.</td>
+      <td>Data dihitung dari transaksi, budget, goal, kategori, dan preferensi AI.</td>
+      <td>Analisis lokal selalu tersedia. Analisis AI dipakai jika API key dan toggle AI aktif.</td>
+    </tr>
+    <tr>
+      <td>Notifikasi</td>
+      <td>Judul, isi, waktu, payload, status saldo negatif harian.</td>
+      <td>SharedPreferences dan local notification plugin.</td>
+      <td>Notifikasi disimpan sebagai riwayat maksimal 50 item dan ditampilkan di dashboard.</td>
+    </tr>
+  </table>
+
+  <h2>5. Proses Bisnis Utama</h2>
+
+  <h3>5.1 Proses Awal Aplikasi</h3>
+  <ol>
+    <li>Aplikasi menjalankan inisialisasi Flutter, locale Indonesia <code>id_ID</code>, dependency injection, database SQLite, dan service notifikasi.</li>
+    <li>Sistem memuat cubit utama: Auth, Settings, Category, Transaction, Budget, Goal, Dashboard, dan Advisor.</li>
+    <li>Splash screen tampil minimal 1,2 detik saat status autentikasi diperiksa.</li>
+    <li>Jika belum ada user lokal, aplikasi membuka halaman Register.</li>
+    <li>Jika user sudah ada dan session user valid, aplikasi membuka Main Navigation.</li>
+    <li>Jika user sudah ada tetapi session kosong, aplikasi membuka halaman Login.</li>
+  </ol>
+
+  <h3>5.2 Proses Register dan Login</h3>
+  <ol>
+    <li>Pengguna mengisi nama lengkap, nomor WhatsApp, email, dan kata sandi saat register.</li>
+    <li>Sistem memvalidasi nama minimal 3 karakter, nomor WhatsApp minimal 10 digit, email berformat dasar valid, dan kata sandi minimal 6 karakter.</li>
+    <li>Sistem menormalisasi email menjadi huruf kecil untuk pengecekan duplikasi.</li>
+    <li>Sistem menormalisasi nomor WhatsApp: awalan 0 diubah menjadi awalan 62.</li>
+    <li>Password disimpan sebagai hash SHA-256 di database lokal.</li>
+    <li>Setelah register berhasil, session user disimpan di SharedPreferences dan pengguna langsung masuk ke aplikasi.</li>
+    <li>Pada login, sistem mencari email lokal dan membandingkan hash password.</li>
+    <li>Logout menghapus session user dan mengembalikan aplikasi ke halaman Login.</li>
+  </ol>
+
+  <h3>5.3 Proses Kelola Kategori</h3>
+  <ol>
+    <li>Saat database dibuat pertama kali, aplikasi membuat kategori awal untuk pengeluaran dan pemasukan.</li>
+    <li>Pengguna dapat membuka Pengaturan lalu Kelola Kategori.</li>
+    <li>Pengguna dapat menambah kategori dengan nama, tipe, ikon, dan warna.</li>
+    <li>Pengguna dapat mengedit kategori yang ada.</li>
+    <li>Saat hapus kategori, sistem memeriksa apakah kategori sudah dipakai transaksi atau anggaran.</li>
+    <li>Jika kategori sedang dipakai, penghapusan diblokir untuk menjaga konsistensi data.</li>
+  </ol>
+
+  <h3>5.4 Proses Pencatatan Transaksi Manual</h3>
+  <ol>
+    <li>Pengguna menekan tombol tambah di bottom navigation atau tombol Tambah pada halaman Transaksi.</li>
+    <li>Pengguna memilih tipe transaksi: Pemasukan atau Pengeluaran.</li>
+    <li>Sistem menampilkan kategori yang sesuai dengan tipe transaksi.</li>
+    <li>Pengguna mengisi nominal, memilih kategori, memilih tanggal, dan menambahkan catatan opsional.</li>
+    <li>Sistem memvalidasi nominal lebih dari 0 dan kategori wajib dipilih.</li>
+    <li>Transaksi disimpan ke SQLite.</li>
+    <li>Sistem memuat ulang transaksi, dashboard, advisor, dan anggaran bulan aktif.</li>
+    <li>Sistem menampilkan notifikasi lokal bahwa transaksi berhasil disimpan.</li>
+  </ol>
+
+  <h3>5.5 Proses Scan Struk OCR</h3>
+  <ol>
+    <li>Pengguna menekan Scan Struk dari halaman Transaksi atau ikon scanner pada form transaksi.</li>
+    <li>Sistem memastikan fitur OCR hanya berjalan pada Android dan iOS.</li>
+    <li>Pengguna memilih sumber gambar: kamera atau galeri.</li>
+    <li>Aplikasi membaca teks pada gambar menggunakan Google ML Kit Text Recognition.</li>
+    <li>Sistem mencoba mendeteksi nominal terbaik dari teks dengan prioritas kata kunci seperti total, jumlah, bayar, tagihan, amount, subtotal, Rp, dan IDR.</li>
+    <li>Jika nominal berhasil terdeteksi, nilai otomatis dimasukkan ke form.</li>
+    <li>Jika gagal, pengguna dapat mengisi nominal manual dari bottom sheet konfirmasi.</li>
+    <li>Pengguna melanjutkan penyimpanan transaksi seperti proses manual.</li>
+  </ol>
+
+  <h3>5.6 Proses Filter, Detail, Edit, Hapus, dan Ekspor Transaksi</h3>
+  <ol>
+    <li>Halaman Transaksi menampilkan saldo periode aktif, total pemasukan, total pengeluaran, dan jumlah data.</li>
+    <li>Pengguna dapat memilih periode: bulan ini, bulan lalu, custom range, atau semua transaksi.</li>
+    <li>Pengguna dapat memfilter transaksi berdasarkan kategori.</li>
+    <li>Transaksi dikelompokkan berdasarkan tanggal dan ditampilkan dari tanggal terbaru.</li>
+    <li>Tap transaksi membuka detail transaksi.</li>
+    <li>Dari detail, pengguna dapat mengedit atau menghapus transaksi.</li>
+    <li>Sebelum menghapus, aplikasi meminta konfirmasi.</li>
+    <li>Pengguna dapat membagikan laporan Excel untuk transaksi yang sedang aktif berdasarkan filter.</li>
+    <li>Jika tidak ada transaksi pada filter aktif, aplikasi menolak ekspor dan menampilkan pesan.</li>
+  </ol>
+
+  <h3>5.7 Proses Dashboard dan Insight</h3>
+  <ol>
+    <li>Dashboard mengambil data bulan berjalan.</li>
+    <li>Sistem menghitung total pemasukan, total pengeluaran, dan saldo bersih.</li>
+    <li>Sistem menghitung pengeluaran per kategori untuk pie chart.</li>
+    <li>Sistem mengambil perbandingan pemasukan dan pengeluaran beberapa bulan terakhir untuk bar chart.</li>
+    <li>Sistem menghitung pemakaian anggaran per kategori.</li>
+    <li>Sistem menampilkan 5 transaksi terbaru.</li>
+    <li>Sistem menampilkan banner insight dari Advisor.</li>
+    <li>Jika saldo bulan berjalan negatif, sistem mengirim notifikasi kondisi keuangan tidak sehat maksimal satu kali per hari.</li>
+    <li>Jika pengguna memiliki nomor WhatsApp, sistem membuka link WhatsApp berisi ringkasan kondisi keuangan negatif.</li>
+  </ol>
+
+  <h3>5.8 Proses Anggaran Bulanan</h3>
+  <ol>
+    <li>Pengguna membuka tab Anggaran.</li>
+    <li>Pengguna memilih bulan dengan tombol bulan sebelumnya atau bulan berikutnya.</li>
+    <li>Pengguna menekan Tambah Anggaran.</li>
+    <li>Pengguna memilih kategori pengeluaran dan mengisi batas anggaran.</li>
+    <li>Sistem memvalidasi kategori wajib dan nominal anggaran lebih dari 0.</li>
+    <li>Sistem menyimpan anggaran atau memperbarui anggaran yang sudah ada untuk kategori, bulan, dan tahun yang sama.</li>
+    <li>Sistem menghitung total pengeluaran kategori tersebut pada bulan aktif.</li>
+    <li>Sistem menampilkan progress pemakaian, sisa anggaran, dan status melalui komponen budget bar.</li>
+    <li>Pengguna dapat mengedit atau menghapus anggaran setelah konfirmasi.</li>
+  </ol>
+
+  <h3>5.9 Proses Goal Keuangan</h3>
+  <ol>
+    <li>Pengguna membuka tab Goals.</li>
+    <li>Pengguna menekan Tambah Goal.</li>
+    <li>Pengguna mengisi nama goal, target nominal, jumlah terkumpul, dan tanggal target.</li>
+    <li>Sistem memvalidasi nama wajib, target lebih dari 0, jumlah terkumpul tidak negatif, dan tanggal target tidak kurang dari hari ini.</li>
+    <li>Sistem menghitung persentase progress, nominal tersisa, bulan tersisa, dan saran setoran bulanan.</li>
+    <li>Pengguna dapat menambah alokasi tabungan ke goal yang sudah ada.</li>
+    <li>Pengguna dapat mengedit atau menghapus goal setelah konfirmasi.</li>
+    <li>Setelah goal berubah, dashboard dan advisor dimuat ulang.</li>
+  </ol>
+
+  <h3>5.10 Proses Analisis Lokal dan AI</h3>
+  <ol>
+    <li>Advisor mengumpulkan transaksi, budget usage, goal, kategori pengeluaran, pengeluaran bulan berjalan, dan perbandingan 3 bulan terakhir.</li>
+    <li>Analisis lokal membuat saran berdasarkan dominasi kategori, anggaran yang mendekati habis atau terlampaui, cashflow rata-rata, dan kemampuan mengejar goal.</li>
+    <li>Jika tidak ada data cukup, sistem menyarankan pengguna membangun riwayat transaksi.</li>
+    <li>Jika API key AI tersedia dan toggle AI aktif, sistem mengirim payload ringkasan ke OpenAI Chat Completions API.</li>
+    <li>Respons AI wajib berupa JSON berbahasa Indonesia dengan projected balance, summary, dan daftar advice.</li>
+    <li>Jika AI gagal, aplikasi otomatis memakai analisis lokal dan tidak memblokir pengalaman pengguna.</li>
+  </ol>
+
+  <h3>5.11 Proses Pengaturan</h3>
+  <ol>
+    <li>Pengguna membuka tab Pengaturan.</li>
+    <li>Pengguna dapat mengaktifkan atau menonaktifkan dark mode.</li>
+    <li>Pengguna dapat membuka konfigurasi AI, mengisi API key, memilih model, mengaktifkan AI, atau menghapus API key lokal.</li>
+    <li>Pengguna dapat membuka halaman Kelola Kategori.</li>
+    <li>Pengguna dapat melihat identitas user lokal.</li>
+    <li>Pengguna dapat logout dari sesi aktif.</li>
+  </ol>
+
+  <h2>6. Alur Ringkas Antar Modul</h2>
+  <table>
+    <tr>
+      <th>Alur</th>
+      <th>Urutan Proses</th>
+      <th>Output</th>
+    </tr>
+    <tr>
+      <td>Onboarding</td>
+      <td>Splash - cek user - register/login - session tersimpan - Main Navigation</td>
+      <td>Pengguna masuk ke dashboard.</td>
+    </tr>
+    <tr>
+      <td>Pencatatan keuangan</td>
+      <td>Tambah transaksi - validasi - simpan SQLite - refresh transaksi, dashboard, budget, advisor</td>
+      <td>Riwayat transaksi dan ringkasan saldo terbaru.</td>
+    </tr>
+    <tr>
+      <td>Kontrol pengeluaran</td>
+      <td>Tambah budget - transaksi pengeluaran masuk - hitung pemakaian kategori - tampilkan budget usage</td>
+      <td>Pengguna mengetahui kategori yang aman, mendekati batas, atau melewati batas.</td>
+    </tr>
+    <tr>
+      <td>Perencanaan target</td>
+      <td>Buat goal - hitung sisa target dan setoran bulanan - tambah alokasi - refresh advisor</td>
+      <td>Progress goal dan rekomendasi menabung.</td>
+    </tr>
+    <tr>
+      <td>Laporan</td>
+      <td>Filter transaksi - buat workbook Excel - simpan file sementara - share</td>
+      <td>File <code>.xlsx</code> laporan transaksi.</td>
+    </tr>
+    <tr>
+      <td>Peringatan keuangan</td>
+      <td>Dashboard hitung saldo - saldo negatif - notifikasi lokal - riwayat notifikasi - WhatsApp report opsional</td>
+      <td>Pengguna menerima peringatan kondisi saldo negatif.</td>
+    </tr>
+  </table>
+
+  <h2>7. Daftar Halaman Aplikasi</h2>
+  <table>
+    <tr>
+      <th>No</th>
+      <th>Halaman / Komponen</th>
+      <th>File</th>
+      <th>Akses</th>
+      <th>Fungsi Utama</th>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Splash Page</td>
+      <td><code>lib/presentation/pages/splash_page.dart</code></td>
+      <td>Tampil otomatis saat aplikasi dibuka.</td>
+      <td>Menampilkan logo, nama aplikasi, loading, dan menunggu proses cek autentikasi.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Auth Page</td>
+      <td><code>lib/presentation/pages/auth_page.dart</code></td>
+      <td>Setelah splash jika belum login atau belum punya user.</td>
+      <td>Register user lokal pertama atau login ke akun lokal.</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Main Navigation Page</td>
+      <td><code>lib/presentation/pages/main_navigation_page.dart</code></td>
+      <td>Setelah autentikasi berhasil.</td>
+      <td>Menyediakan bottom navigation untuk Dashboard, Transaksi, Anggaran, Goals, Pengaturan, dan tombol cepat tambah transaksi.</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Dashboard Page</td>
+      <td><code>lib/presentation/pages/dashboard_page.dart</code></td>
+      <td>Tab pertama / ikon home.</td>
+      <td>Menampilkan saldo, pemasukan, pengeluaran, insight, transaksi terbaru, progress budget, grafik kategori, grafik bulanan, dan riwayat notifikasi.</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Transactions Page</td>
+      <td><code>lib/presentation/pages/transactions_page.dart</code></td>
+      <td>Tab transaksi atau shortcut kategori dari dashboard.</td>
+      <td>Menampilkan riwayat transaksi, filter periode/kategori, detail, edit, hapus, scan struk, tambah transaksi, dan share Excel report.</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Transaction Form Page</td>
+      <td><code>lib/presentation/pages/transaction_form_page.dart</code></td>
+      <td>Tombol tambah, edit transaksi, atau scan struk.</td>
+      <td>Form tambah/edit transaksi dengan pilihan tipe, nominal, kategori, tanggal, catatan, dan OCR nominal dari foto struk.</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Budgets Page</td>
+      <td><code>lib/presentation/pages/budgets_page.dart</code></td>
+      <td>Tab anggaran / ikon wallet.</td>
+      <td>Mengelola batas anggaran bulanan per kategori pengeluaran dan menampilkan pemakaian anggaran.</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>Goals Page</td>
+      <td><code>lib/presentation/pages/goals_page.dart</code></td>
+      <td>Tab goals / ikon flag.</td>
+      <td>Menampilkan daftar goal, progress, tambah alokasi, edit, dan hapus goal.</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>Goal Form Page</td>
+      <td><code>lib/presentation/pages/goal_form_page.dart</code></td>
+      <td>Tombol Tambah Goal atau edit goal.</td>
+      <td>Form membuat dan mengubah goal, menghitung preview progress, sisa target, dan estimasi setoran bulanan.</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>Settings Page</td>
+      <td><code>lib/presentation/pages/settings_page.dart</code></td>
+      <td>Tab pengaturan / ikon person.</td>
+      <td>Mengatur dark mode, konfigurasi AI, akses kelola kategori, melihat info user, dan logout.</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>Category Page</td>
+      <td><code>lib/presentation/pages/category_page.dart</code></td>
+      <td>Pengaturan - Kelola Kategori.</td>
+      <td>Menambah, mengedit, dan menghapus kategori pemasukan atau pengeluaran.</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>Transaction Receipt Page</td>
+      <td><code>lib/presentation/pages/transaction_receipt_page.dart</code></td>
+      <td>Komponen halaman tersedia di kode, tetapi tidak terlihat dipanggil oleh alur simpan transaksi saat ini.</td>
+      <td>Menampilkan receipt transaksi berhasil dengan detail kategori, tanggal, jenis, nominal, dan catatan.</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>Notification History Sheet</td>
+      <td>Bagian dari <code>dashboard_page.dart</code></td>
+      <td>Ikon notifikasi pada dashboard.</td>
+      <td>Menampilkan riwayat notifikasi lokal, termasuk notifikasi data tersimpan dan saldo negatif.</td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td>Filter Transaction Sheet</td>
+      <td>Bagian dari <code>transactions_page.dart</code></td>
+      <td>Ikon filter pada halaman Transaksi.</td>
+      <td>Memilih periode transaksi dan kategori transaksi.</td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td>AI Configuration Sheet</td>
+      <td>Bagian dari <code>settings_page.dart</code></td>
+      <td>Pengaturan - Konfigurasi AI.</td>
+      <td>Menyimpan API key, model AI, toggle aktivasi AI, dan menghapus API key dari perangkat.</td>
+    </tr>
+  </table>
+
+  <h2>8. Panduan Penggunaan Lengkap</h2>
+
+  <h3>8.1 Membuka Aplikasi Pertama Kali</h3>
+  <ol>
+    <li>Buka aplikasi NoteUang Me.</li>
+    <li>Tunggu halaman Splash selesai memuat.</li>
+    <li>Jika belum ada akun, aplikasi langsung menampilkan form register.</li>
+    <li>Isi nama lengkap, nomor WhatsApp, email, dan kata sandi.</li>
+    <li>Tekan Daftar Sekarang.</li>
+    <li>Setelah berhasil, pengguna masuk ke Dashboard.</li>
+  </ol>
+
+  <h3>8.2 Login</h3>
+  <ol>
+    <li>Buka aplikasi.</li>
+    <li>Jika sesi tidak aktif, halaman Login ditampilkan.</li>
+    <li>Masukkan email dan kata sandi yang sudah terdaftar di perangkat.</li>
+    <li>Tekan Login.</li>
+    <li>Jika email atau kata sandi salah, aplikasi menampilkan pesan kesalahan.</li>
+  </ol>
+
+  <h3>8.3 Melihat Dashboard</h3>
+  <ol>
+    <li>Buka tab Dashboard.</li>
+    <li>Lihat saldo bersih, total pemasukan, dan total pengeluaran bulan berjalan.</li>
+    <li>Lihat shortcut kategori pengeluaran untuk membuka transaksi kategori tersebut.</li>
+    <li>Baca insight atau saran keuangan dari kartu Advisor.</li>
+    <li>Lihat transaksi terbaru.</li>
+    <li>Lihat progress anggaran, grafik kategori pengeluaran, dan grafik pemasukan versus pengeluaran.</li>
+    <li>Tarik layar ke bawah untuk refresh data.</li>
+    <li>Tekan ikon notifikasi untuk melihat riwayat notifikasi.</li>
+  </ol>
+
+  <h3>8.4 Menambah Transaksi Manual</h3>
+  <ol>
+    <li>Tekan tombol plus di bottom navigation atau tekan Tambah pada halaman Transaksi.</li>
+    <li>Pilih tipe transaksi: Pengeluaran atau Pemasukan.</li>
+    <li>Masukkan nominal transaksi.</li>
+    <li>Pilih kategori yang sesuai.</li>
+    <li>Pilih tanggal transaksi.</li>
+    <li>Isi catatan jika diperlukan.</li>
+    <li>Tekan Simpan Transaksi.</li>
+    <li>Aplikasi menyimpan data, memperbarui dashboard, dan menampilkan notifikasi transaksi tersimpan.</li>
+  </ol>
+
+  <h3>8.5 Menambah Transaksi dengan Scan Struk</h3>
+  <ol>
+    <li>Buka halaman Transaksi.</li>
+    <li>Tekan Scan Struk.</li>
+    <li>Pilih Ambil Foto untuk membuka kamera atau Upload dari Galeri untuk memilih foto struk.</li>
+    <li>Berikan izin kamera atau galeri jika diminta perangkat.</li>
+    <li>Tunggu proses OCR membaca teks pada gambar.</li>
+    <li>Jika nominal terbaca, nominal otomatis masuk ke form transaksi.</li>
+    <li>Jika nominal belum terbaca, isi nominal secara manual pada form konfirmasi.</li>
+    <li>Lengkapi kategori, tanggal, dan catatan, lalu simpan transaksi.</li>
+  </ol>
+
+  <h3>8.6 Melihat, Memfilter, dan Mengelola Transaksi</h3>
+  <ol>
+    <li>Buka tab Transaksi.</li>
+    <li>Pilih periode cepat: Bulan ini, Bulan lalu, Custom, atau Semua.</li>
+    <li>Gunakan filter untuk memilih periode dan kategori secara lebih detail.</li>
+    <li>Tekan salah satu transaksi untuk melihat detail.</li>
+    <li>Pilih Edit Transaksi untuk mengubah data.</li>
+    <li>Pilih Hapus untuk menghapus transaksi setelah konfirmasi.</li>
+    <li>Tekan ikon share untuk membuat dan membagikan laporan Excel berdasarkan filter aktif.</li>
+  </ol>
+
+  <h3>8.7 Membuat Laporan Excel</h3>
+  <ol>
+    <li>Buka halaman Transaksi.</li>
+    <li>Atur filter transaksi sesuai kebutuhan laporan.</li>
+    <li>Tekan ikon share.</li>
+    <li>Aplikasi membuat file Excel berisi periode, waktu dibuat, total pemasukan, total pengeluaran, saldo bersih, dan daftar transaksi.</li>
+    <li>Pilih aplikasi tujuan dari share sheet perangkat.</li>
+    <li>Jika tidak ada transaksi pada filter aktif, aplikasi tidak membuat laporan dan menampilkan pesan.</li>
+  </ol>
+
+  <h3>8.8 Membuat dan Mengelola Anggaran</h3>
+  <ol>
+    <li>Buka tab Anggaran.</li>
+    <li>Pilih bulan yang ingin diatur menggunakan tombol kiri atau kanan.</li>
+    <li>Tekan Tambah Anggaran.</li>
+    <li>Pilih kategori pengeluaran.</li>
+    <li>Isi batas anggaran dalam Rupiah.</li>
+    <li>Tekan Simpan.</li>
+    <li>Lihat progress pemakaian anggaran pada daftar.</li>
+    <li>Gunakan tombol edit atau hapus pada item anggaran jika diperlukan.</li>
+  </ol>
+
+  <h3>8.9 Membuat dan Mengelola Goal Keuangan</h3>
+  <ol>
+    <li>Buka tab Goals.</li>
+    <li>Tekan Tambah Goal.</li>
+    <li>Isi nama goal, target jumlah, jumlah terkumpul, dan tanggal target.</li>
+    <li>Lihat preview progress dan estimasi setoran bulanan.</li>
+    <li>Tekan Simpan Goal.</li>
+    <li>Untuk menambah progress, tekan tambah alokasi pada goal lalu isi nominal.</li>
+    <li>Gunakan edit untuk mengubah goal atau hapus untuk menghapus goal setelah konfirmasi.</li>
+  </ol>
+
+  <h3>8.10 Mengelola Kategori</h3>
+  <ol>
+    <li>Buka tab Pengaturan.</li>
+    <li>Pilih Kelola Kategori.</li>
+    <li>Tekan tombol Kategori untuk menambah kategori baru.</li>
+    <li>Isi nama kategori, tipe pemasukan atau pengeluaran, ikon, dan warna.</li>
+    <li>Tekan Simpan.</li>
+    <li>Gunakan menu pada item kategori untuk edit atau hapus.</li>
+    <li>Jika kategori sudah dipakai transaksi atau anggaran, aplikasi menolak penghapusan.</li>
+  </ol>
+
+  <h3>8.11 Mengatur AI Advisor</h3>
+  <ol>
+    <li>Buka tab Pengaturan.</li>
+    <li>Pilih Konfigurasi AI.</li>
+    <li>Masukkan API key.</li>
+    <li>Isi model AI, default aplikasi adalah <code>gpt-4o-mini</code>.</li>
+    <li>Aktifkan toggle Analisis AI.</li>
+    <li>Tekan Simpan Konfigurasi AI.</li>
+    <li>Kembali ke dashboard atau goal untuk melihat advisor diperbarui.</li>
+    <li>Jika ingin berhenti memakai AI, hapus API key atau nonaktifkan toggle.</li>
+  </ol>
+
+  <h3>8.12 Mengatur Tema dan Logout</h3>
+  <ol>
+    <li>Buka tab Pengaturan.</li>
+    <li>Gunakan switch Dark mode untuk mengganti tema aplikasi.</li>
+    <li>Lihat kartu user untuk memastikan akun lokal yang sedang aktif.</li>
+    <li>Tekan Logout untuk keluar dari sesi saat ini.</li>
+  </ol>
+
+  <h2>9. Aturan Validasi dan Kondisi Khusus</h2>
+  <table>
+    <tr>
+      <th>Area</th>
+      <th>Aturan</th>
+      <th>Pesan / Dampak</th>
+    </tr>
+    <tr>
+      <td>Register</td>
+      <td>Nama minimal 3 karakter, WhatsApp minimal 10 digit, email mengandung @ dan titik, password minimal 6 karakter.</td>
+      <td>Input ditolak sampai valid.</td>
+    </tr>
+    <tr>
+      <td>Login</td>
+      <td>Email harus terdaftar lokal dan password hash harus cocok.</td>
+      <td>Jika gagal, muncul pesan email atau kata sandi tidak sesuai.</td>
+    </tr>
+    <tr>
+      <td>Transaksi</td>
+      <td>Nominal harus lebih dari 0, kategori wajib tersedia dan dipilih, tanggal antara 2020 sampai 5 tahun ke depan.</td>
+      <td>Transaksi tidak disimpan jika tidak valid.</td>
+    </tr>
+    <tr>
+      <td>OCR</td>
+      <td>Fitur nominal OCR hanya tersedia di Android dan iOS.</td>
+      <td>Di platform lain muncul pesan bahwa OCR hanya tersedia di Android dan iOS.</td>
+    </tr>
+    <tr>
+      <td>Excel report</td>
+      <td>Laporan hanya dibuat jika transaksi pada filter aktif tidak kosong.</td>
+      <td>Jika kosong, aplikasi menampilkan pesan tidak ada transaksi untuk dibagikan.</td>
+    </tr>
+    <tr>
+      <td>Anggaran</td>
+      <td>Kategori wajib dipilih dan batas anggaran harus lebih dari 0.</td>
+      <td>Anggaran tidak disimpan jika tidak valid.</td>
+    </tr>
+    <tr>
+      <td>Goal</td>
+      <td>Nama wajib, target lebih dari 0, jumlah terkumpul tidak negatif, tanggal target minimal hari ini dan maksimal 20 tahun ke depan.</td>
+      <td>Goal tidak disimpan jika tidak valid.</td>
+    </tr>
+    <tr>
+      <td>Kategori</td>
+      <td>Nama wajib, tipe wajib, ikon dan warna dipilih. Kategori yang sudah dipakai transaksi atau budget tidak boleh dihapus.</td>
+      <td>Penghapusan diblokir untuk menjaga data transaksi dan budget tetap valid.</td>
+    </tr>
+    <tr>
+      <td>AI</td>
+      <td>Analisis AI hanya aktif jika API key tersedia dan toggle AI aktif.</td>
+      <td>Jika API gagal, aplikasi memakai analisis lokal.</td>
+    </tr>
+    <tr>
+      <td>Saldo negatif</td>
+      <td>Notifikasi saldo negatif dikirim maksimal satu kali per hari.</td>
+      <td>Riwayat disimpan dan WhatsApp report dibuka jika nomor WhatsApp tersedia.</td>
+    </tr>
+  </table>
+
+  <h2>10. Data Awal Kategori</h2>
+  <table>
+    <tr>
+      <th>Tipe</th>
+      <th>Kategori Awal</th>
+    </tr>
+    <tr>
+      <td>Pengeluaran</td>
+      <td>Makanan, Transportasi, Belanja, Hiburan, Tagihan, Kesehatan, Pendidikan, Tabungan/Goal, Investasi.</td>
+    </tr>
+    <tr>
+      <td>Pemasukan</td>
+      <td>Gaji, Bonus, Freelance, Hadiah.</td>
+    </tr>
+  </table>
+
+  <h2>11. Notifikasi dan Riwayat</h2>
+  <ul>
+    <li>Aplikasi meminta izin notifikasi pada inisialisasi service notifikasi.</li>
+    <li>Notifikasi input tersimpan muncul saat akun, transaksi, kategori, budget, atau goal berhasil disimpan.</li>
+    <li>Notifikasi saldo negatif muncul saat saldo bersih bulan berjalan lebih kecil dari 0.</li>
+    <li>Riwayat notifikasi disimpan di SharedPreferences dengan batas maksimal 50 item terbaru.</li>
+    <li>Riwayat dapat dilihat dari dashboard melalui bottom sheet Riwayat Notifikasi.</li>
+  </ul>
+
+  <h2>12. Laporan Excel</h2>
+  <p>
+    Laporan Excel dibuat dari halaman Transaksi menggunakan package <code>excel</code> dan dibagikan dengan
+    <code>share_plus</code>. File disimpan sementara dengan nama seperti
+    <code>report_keuangan_yyyyMMdd_HHmmss.xlsx</code>. Isi laporan meliputi judul, periode, waktu dibuat,
+    total pemasukan, total pengeluaran, saldo bersih, serta daftar transaksi dengan kolom tanggal, jenis,
+    kategori, nominal, dan catatan.
+  </p>
+
+  <h2>13. Arsitektur Teknis Singkat</h2>
+  <table>
+    <tr>
+      <th>Lapisan</th>
+      <th>Komponen</th>
+      <th>Keterangan</th>
+    </tr>
+    <tr>
+      <td>Presentation</td>
+      <td>Pages, widgets, cubits</td>
+      <td>Menangani UI, state, event pengguna, dan refresh data.</td>
+    </tr>
+    <tr>
+      <td>Domain</td>
+      <td>Entities dan repository interfaces</td>
+      <td>Menentukan model bisnis seperti transaksi, kategori, budget, goal, user, report, dan AI analysis.</td>
+    </tr>
+    <tr>
+      <td>Data</td>
+      <td>Models, repository implementations, LocalDatabase, AI remote datasource</td>
+      <td>Menghubungkan domain dengan SQLite, SharedPreferences, dan OpenAI API.</td>
+    </tr>
+    <tr>
+      <td>Core</td>
+      <td>Constants, theme, utils, notification service, navigation key</td>
+      <td>Menyediakan utilitas lintas modul seperti format mata uang, tanggal, warna, ikon, dan notifikasi.</td>
+    </tr>
+    <tr>
+      <td>Dependency Injection</td>
+      <td><code>get_it</code> di <code>lib/injection_container.dart</code></td>
+      <td>Mendaftarkan database, repositories, services, HTTP client, dan cubits.</td>
+    </tr>
+  </table>
+
+  <h2>14. Dependency Penting</h2>
+  <table>
+    <tr>
+      <th>Dependency</th>
+      <th>Fungsi</th>
+    </tr>
+    <tr>
+      <td><code>flutter_bloc</code></td>
+      <td>Manajemen state halaman dan proses bisnis.</td>
+    </tr>
+    <tr>
+      <td><code>get_it</code></td>
+      <td>Dependency injection.</td>
+    </tr>
+    <tr>
+      <td><code>sqflite</code></td>
+      <td>Database lokal SQLite.</td>
+    </tr>
+    <tr>
+      <td><code>shared_preferences</code></td>
+      <td>Penyimpanan preferensi, session, konfigurasi AI, dan riwayat notifikasi.</td>
+    </tr>
+    <tr>
+      <td><code>flutter_local_notifications</code></td>
+      <td>Notifikasi lokal.</td>
+    </tr>
+    <tr>
+      <td><code>image_picker</code> dan <code>google_mlkit_text_recognition</code></td>
+      <td>Scan struk dari kamera atau galeri dan OCR nominal.</td>
+    </tr>
+    <tr>
+      <td><code>excel</code> dan <code>share_plus</code></td>
+      <td>Membuat dan membagikan laporan Excel.</td>
+    </tr>
+    <tr>
+      <td><code>http</code></td>
+      <td>Panggilan ke OpenAI API untuk AI Advisor.</td>
+    </tr>
+    <tr>
+      <td><code>fl_chart</code></td>
+      <td>Grafik dashboard.</td>
+    </tr>
+    <tr>
+      <td><code>crypto</code></td>
+      <td>Hash password lokal.</td>
+    </tr>
+  </table>
+
+  <h2>15. Catatan Keamanan dan Batasan</h2>
+  <ul>
+    <li>Data aplikasi tersimpan lokal di perangkat; tidak ada sinkronisasi cloud pada kode saat ini.</li>
+    <li>API key AI disimpan lokal di SharedPreferences. Untuk produksi, penyimpanan aman berbasis secure storage lebih disarankan.</li>
+    <li>Password user disimpan sebagai hash SHA-256 lokal. Untuk produksi, password sebaiknya memakai password hashing khusus seperti Argon2, bcrypt, atau PBKDF2 dengan salt.</li>
+    <li>Halaman receipt tersedia di kode, tetapi tidak terlihat dipanggil dari proses simpan transaksi saat ini.</li>
+    <li>OCR bergantung pada kualitas gambar struk, izin kamera/galeri, dan dukungan platform Android atau iOS.</li>
+    <li>Analisis AI membutuhkan koneksi internet dan API key valid. Jika tidak tersedia, aplikasi tetap memakai analisis lokal.</li>
+  </ul>
+
+  <h2>16. Referensi File Kode</h2>
+  <table>
+    <tr>
+      <th>Area</th>
+      <th>File Utama</th>
+    </tr>
+    <tr>
+      <td>Entry point dan aplikasi</td>
+      <td><code>lib/main.dart</code>, <code>lib/app.dart</code>, <code>android/app/src/main/kotlin/com/example/money_tracker/MainActivity.kt</code></td>
+    </tr>
+    <tr>
+      <td>Halaman</td>
+      <td><code>lib/presentation/pages/</code></td>
+    </tr>
+    <tr>
+      <td>State management</td>
+      <td><code>lib/presentation/cubits/</code></td>
+    </tr>
+    <tr>
+      <td>Database lokal</td>
+      <td><code>lib/data/datasources/local_database.dart</code></td>
+    </tr>
+    <tr>
+      <td>Repository data</td>
+      <td><code>lib/data/repositories/</code> dan <code>lib/domain/repositories/</code></td>
+    </tr>
+    <tr>
+      <td>Model bisnis</td>
+      <td><code>lib/domain/entities/</code></td>
+    </tr>
+    <tr>
+      <td>AI Advisor</td>
+      <td><code>lib/presentation/cubits/advisor_cubit.dart</code>, <code>lib/data/datasources/ai_advisor_remote_datasource.dart</code></td>
+    </tr>
+    <tr>
+      <td>Notifikasi</td>
+      <td><code>lib/core/services/financial_notification_service.dart</code></td>
+    </tr>
+  </table>
+
+  <div class="note">
+    <strong>Kesimpulan:</strong> NoteUang Me memiliki proses bisnis utama untuk pencatatan transaksi,
+    kontrol anggaran, pencapaian goal, insight keuangan, notifikasi, dan laporan Excel. Seluruh proses
+    inti bekerja secara lokal, dengan AI sebagai fitur opsional untuk memperkaya rekomendasi.
+  </div>
+</body>
+</html>
