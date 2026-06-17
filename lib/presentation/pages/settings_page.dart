@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:money_tracker/presentation/pages/goals_page.dart';
 
 import '../cubits/advisor_cubit.dart';
 import '../cubits/auth_cubit.dart';
@@ -29,7 +30,18 @@ class SettingsPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.only(top: 20),
       children: [
-        const SizedBox(height: 100),
+        const SizedBox(height: 30),
+        const Center(
+          child: Text(
+            "Applications Settings",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
 
         BlocBuilder<SettingsCubit, SettingsState>(
           builder: (context, state) {
@@ -38,13 +50,14 @@ class SettingsPage extends StatelessWidget {
                 value: state.isDarkMode,
                 onChanged: (value) =>
                     context.read<SettingsCubit>().setDarkMode(value),
-                secondary: const Icon(Icons.dark_mode),
+                secondary: CircleAvatar(child: const Icon(Icons.dark_mode)),
                 title: const Text('Dark mode'),
                 subtitle: const Text('Simpan preferensi tema di perangkat'),
               ),
             );
           },
         ),
+        const SizedBox(height: 10),
         BlocBuilder<SettingsCubit, SettingsState>(
           builder: (context, state) {
             return Card(
@@ -60,7 +73,9 @@ class SettingsPage extends StatelessWidget {
                             await context.read<AdvisorCubit>().generateAdvice();
                           }
                         : null,
-                    secondary: const Icon(Icons.smart_toy_outlined),
+                    secondary: CircleAvatar(
+                      child: const Icon(Icons.smart_toy_outlined),
+                    ),
                     title: const Text('Analisis AI'),
                     subtitle: Text(
                       state.hasAiApiKey
@@ -70,7 +85,9 @@ class SettingsPage extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                   ListTile(
-                    leading: const Icon(Icons.tune_rounded),
+                    leading: CircleAvatar(
+                      child: const Icon(Icons.tune_rounded),
+                    ),
                     title: const Text('Konfigurasi AI'),
                     subtitle: Text(
                       state.hasAiApiKey
@@ -89,7 +106,7 @@ class SettingsPage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Card(
             child: ListTile(
-              leading: const Icon(Icons.category),
+              leading: CircleAvatar(child: const Icon(Icons.category)),
               title: const Text('Kelola Kategori'),
               subtitle: const Text(
                 'Tambah, edit, atau hapus kategori transaksi',
@@ -104,13 +121,17 @@ class SettingsPage extends StatelessWidget {
         ),
         const Card(
           child: ListTile(
-            leading: Icon(Icons.verified_user_outlined),
+            leading: CircleAvatar(
+              child: const Icon(Icons.verified_user_outlined),
+            ),
             title: Text('Financial Tracker & Future Advisor'),
             subtitle: Text(
               'Data tersimpan lokal perangkat. API key AI disimpan lokal di perangkat ini.',
             ),
           ),
         ),
+
+        const SizedBox(height: 10),
         BlocBuilder<AuthCubit, AuthState>(
           builder: (context, authState) {
             final user = authState.user;
@@ -118,7 +139,13 @@ class SettingsPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Card(
                 child: ListTile(
-                  leading: const Icon(Icons.account_circle_outlined),
+                  leading: CircleAvatar(
+                    child: CircleAvatar(
+                      child: CircleAvatar(
+                        child: const Icon(Icons.account_circle_outlined),
+                      ),
+                    ),
+                  ),
                   title: Text(user?.fullName ?? 'Pengguna Lokal'),
                   subtitle: Text(user?.email ?? 'Belum login'),
                 ),
@@ -126,9 +153,23 @@ class SettingsPage extends StatelessWidget {
             );
           },
         ),
+        const SizedBox(height: 10),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.logout),
+            leading: CircleAvatar(child: const Icon(Icons.moving_outlined)),
+            title: const Text('Target Keuangan'),
+            subtitle: const Text('Target keuangan Anda.'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GoalsPage()),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Card(
+          child: ListTile(
+            leading: CircleAvatar(child: const Icon(Icons.logout)),
             title: const Text('Logout'),
             subtitle: const Text('Keluar dari sesi saat ini'),
             trailing: const Icon(Icons.chevron_right),

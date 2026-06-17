@@ -121,27 +121,36 @@ class _DashboardPageState extends State<DashboardPage> {
           return MediaQuery.removePadding(
             context: context,
             removeTop: true,
-            child: ListView(
-              children: [
-                _HeroCard(
-                  balance: dashboard.netBalance,
-                  income: dashboard.totalIncome,
-                  expense: dashboard.totalExpense,
-                  notificationCount: _notificationCount,
-                  onOpenNotifications: () => _openNotificationHistory(context),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _HeroCard(
+                    balance: dashboard.netBalance,
+                    income: dashboard.totalIncome,
+                    expense: dashboard.totalExpense,
+                    notificationCount: _notificationCount,
+                    onOpenNotifications: () =>
+                        _openNotificationHistory(context),
+                  ),
                 ),
-                const SizedBox(height: 14),
-                Padding(
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _QuickFeatureHeaderDelegate(
+                    topPadding: MediaQuery.of(context).padding.top,
+                    child: _QuickFeatureCard(
+                      categories: quickCategories,
+                      onTapCategory: (category) =>
+                          _openCategoryTransactions(context, category),
+                      showMoreShortcut: hasMoreShortcut,
+                      onTapMore: () => _openAllCategoryTransactions(context),
+                    ),
+                  ),
+                ),
+                SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                  child: Column(
-                    children: [
-                      _QuickFeatureCard(
-                        categories: quickCategories,
-                        onTapCategory: (category) =>
-                            _openCategoryTransactions(context, category),
-                        showMoreShortcut: hasMoreShortcut,
-                        onTapMore: () => _openAllCategoryTransactions(context),
-                      ),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
                       const SizedBox(height: 14),
                       _InsightBanner(advisorState: advisorState),
                       const SizedBox(height: 14),
@@ -175,13 +184,16 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ),
                       const SizedBox(height: 204),
-                    ],
+                    ]),
                   ),
                 ),
-                if (dashboard.status == CubitStatus.loading) ...[
-                  const SizedBox(height: 14),
-                  const LinearProgressIndicator(),
-                ],
+                if (dashboard.status == CubitStatus.loading)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 14),
+                      child: LinearProgressIndicator(),
+                    ),
+                  ),
               ],
             ),
           );
@@ -349,139 +361,165 @@ class _HeroCardState extends State<_HeroCard> {
     final displayedBalance = _isBalanceVisible
         ? CurrencyFormatter.format(widget.balance)
         : 'Rp ••••••••';
+    final heroHeight = (MediaQuery.of(context).size.height * 0.10)
+        .clamp(340.0, 430.0)
+        .toDouble();
+    const actionPillHeight = 76.0;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 0.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.10)
-              : Colors.transparent,
-        ),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [gradientStart, gradientMid, gradientEnd],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return SizedBox(
+      height: heroHeight + (actionPillHeight / 2),
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-          Row(
-            children: [
-              const Icon(
-                Icons.auto_awesome_rounded,
-                color: Color(0xFFFFFFFF),
-                size: 24,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: heroHeight,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18.0,
+                vertical: 0.0,
               ),
-              const SizedBox(width: 8),
-              Text(
-                'NoteUang Me',
-                style: TextStyle(
-                  color: onHero,
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.10)
+                      : Colors.transparent,
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [gradientStart, gradientMid, gradientEnd],
                 ),
               ),
-              const Spacer(),
-              Material(
-                color: onHero.withValues(alpha: isDark ? 0.12 : 0.20),
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: widget.onOpenNotifications,
-                  child: Stack(
-                    clipBehavior: Clip.none,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                  Row(
                     children: [
-                      SizedBox(
-                        width: 42,
-                        height: 42,
-                        child: Icon(
-                          Icons.notifications_none_rounded,
+                      const Icon(
+                        Icons.auto_awesome_rounded,
+                        color: Color(0xFFFFFFFF),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'NoteUang Me',
+                        style: TextStyle(
+                          color: onHero,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const Spacer(),
+                      Material(
+                        color: onHero.withValues(alpha: isDark ? 0.12 : 0.20),
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: widget.onOpenNotifications,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              SizedBox(
+                                width: 42,
+                                height: 42,
+                                child: Icon(
+                                  Icons.notifications_none_rounded,
+                                  color: onHero,
+                                ),
+                              ),
+                              if (widget.notificationCount > 0)
+                                Positioned(
+                                  right: -2,
+                                  top: -3,
+                                  child: _NotificationBadge(
+                                    count: widget.notificationCount,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Total Balance',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: onHeroMuted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            displayedBalance,
+                            style: TextStyle(
+                              color: onHero,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _isBalanceVisible = !_isBalanceVisible;
+                          });
+                        },
+                        splashRadius: 20,
+                        icon: Icon(
+                          _isBalanceVisible
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                           color: onHero,
                         ),
                       ),
-                      if (widget.notificationCount > 0)
-                        Positioned(
-                          right: -2,
-                          top: -3,
-                          child: _NotificationBadge(
-                            count: widget.notificationCount,
-                          ),
-                        ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _HeroMetric(
+                          label: 'Income',
+                          value: CurrencyFormatter.format(widget.income),
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _HeroMetric(
+                          label: 'Expense',
+                          value: CurrencyFormatter.format(widget.expense),
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Total Balance',
-            style: TextStyle(
-              fontSize: 15,
-              color: onHeroMuted,
-              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    displayedBalance,
-                    style: TextStyle(
-                      color: onHero,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _isBalanceVisible = !_isBalanceVisible;
-                  });
-                },
-                splashRadius: 20,
-                icon: Icon(
-                  _isBalanceVisible
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  color: onHero,
-                ),
-              ),
-            ],
+          Positioned(
+            left: 18,
+            right: 18,
+            bottom: 0,
+            child: _ActionPill(isDark: isDark),
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _HeroMetric(
-                  label: 'Income',
-                  value: CurrencyFormatter.format(widget.income),
-                  isDark: isDark,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _HeroMetric(
-                  label: 'Expense',
-                  value: CurrencyFormatter.format(widget.expense),
-                  isDark: isDark,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _ActionPill(isDark: isDark),
         ],
       ),
     );
@@ -587,8 +625,8 @@ class _ActionPill extends StatelessWidget {
         : const [Color(0xFF4CC4F6), Color(0xFF1796E7)];
 
     return Container(
-      height: 62,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      height: 76,
+      padding: const EdgeInsets.symmetric(horizontal: 0),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(31),
@@ -598,61 +636,114 @@ class _ActionPill extends StatelessWidget {
               : Colors.black.withValues(alpha: 0.03),
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Receive',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w700,
-                      color: textColor,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Receive',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(Icons.call_received_rounded, color: textColor),
-                ],
+                    const SizedBox(width: 8),
+                    Icon(Icons.call_received_rounded, color: textColor),
+                  ],
+                ),
               ),
             ),
-          ),
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(colors: centerGradient),
-            ),
-            child: const Icon(
-              Icons.content_paste_search_sharp,
-              color: Colors.white,
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Send',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w700,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(Icons.call_made_rounded, color: textColor),
-                ],
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(colors: centerGradient),
+              ),
+              child: const Icon(
+                Icons.content_paste_search_sharp,
+                color: Colors.white,
               ),
             ),
-          ),
-        ],
+            Expanded(
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Send',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.call_made_rounded, color: textColor),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+}
+
+class _QuickFeatureHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _QuickFeatureHeaderDelegate({
+    required this.child,
+    required this.topPadding,
+  });
+
+  static const double _topGap = 10;
+  static const double _cardHeight = 126;
+  static const double _bottomGap = 12;
+
+  final Widget child;
+  final double topPadding;
+
+  @override
+  double get minExtent => topPadding + _topGap + _cardHeight + _bottomGap;
+
+  @override
+  double get maxExtent => minExtent;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox.expand(
+      child: Material(
+        color: scheme.surface.withValues(alpha: 0.98),
+        elevation: overlapsContent ? 8 : 0,
+        shadowColor: scheme.shadow.withValues(alpha: 0.18),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            15,
+            topPadding + _topGap,
+            15,
+            _bottomGap,
+          ),
+          child: SizedBox(height: _cardHeight, child: child),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _QuickFeatureHeaderDelegate oldDelegate) {
+    return child != oldDelegate.child || topPadding != oldDelegate.topPadding;
   }
 }
 

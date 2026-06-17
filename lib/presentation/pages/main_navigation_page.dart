@@ -4,11 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubits/advisor_cubit.dart';
 import '../cubits/budget_cubit.dart';
 import '../cubits/dashboard_cubit.dart';
-import '../cubits/goal_cubit.dart';
 import '../cubits/transaction_cubit.dart';
 import 'budgets_page.dart';
 import 'dashboard_page.dart';
-import 'goals_page.dart';
 import 'settings_page.dart';
 import 'transaction_form_page.dart';
 import 'transactions_page.dart';
@@ -47,6 +45,9 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             child: _FloatingBottomBar(
               selectedIndex: _selectedIndex,
               onSelected: (index) {
+                if (index < 0 || index >= _pages.length) {
+                  return;
+                }
                 setState(() => _selectedIndex = index);
                 _refreshCurrentTab();
               },
@@ -85,10 +86,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         context.read<BudgetCubit>().loadMonth(
           context.read<BudgetCubit>().state.month,
         );
+      // case 3:
+      //   context.read<GoalCubit>().loadGoals();
+      //   context.read<AdvisorCubit>().generateAdvice();
       case 3:
-        context.read<GoalCubit>().loadGoals();
-        context.read<AdvisorCubit>().generateAdvice();
-      case 4:
         break;
     }
   }
@@ -171,10 +172,10 @@ class _FloatingBottomBar extends StatelessWidget {
             //   ),
             // ),
             IconButton(
-              onPressed: () => onSelected(4),
+              onPressed: () => onSelected(3),
               icon: Icon(
                 Icons.person_rounded,
-                color: selectedIndex == 4 ? Colors.white : inactiveColor,
+                color: selectedIndex == 3 ? Colors.white : inactiveColor,
               ),
             ),
           ],

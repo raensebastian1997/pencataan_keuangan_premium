@@ -74,99 +74,124 @@ class _TransactionsPageState extends State<TransactionsPage> {
           );
           final netBalance = totalIncome - totalExpense;
           final selectedCategory = _selectedCategory(state.categories);
-          final listChildren = _buildTransactionSections(transactions);
+          final transactionEntries = _buildTransactionEntries(transactions);
 
           return RefreshIndicator(
             onRefresh: _refreshCurrentView,
             child: Stack(
               children: [
-                ListView(
+                CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  children: [
-                    _TransactionsHero(
-                      filterLabel: _filterLabel(state.categories),
-                      transactionCount: transactions.length,
-                      totalIncome: totalIncome,
-                      totalExpense: totalExpense,
-                      netBalance: netBalance,
-                      selectedCategory: selectedCategory,
-                      onFilterTap: () => _openFilterSheet(state.categories),
-                      onShareTap: () => _shareExcelReport(
-                        transactions: transactions,
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: _TransactionsHero(
                         filterLabel: _filterLabel(state.categories),
+                        transactionCount: transactions.length,
                         totalIncome: totalIncome,
                         totalExpense: totalExpense,
                         netBalance: netBalance,
-                      ),
-                      onAddTap: () => _openForm(),
-                      onScanTap: () => _openForm(startWithOcr: true),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                      child: _PeriodSelector(
-                        selectedPeriod: _period,
-                        onSelected: _selectPeriod,
-                      ),
-                    ),
-                    if (state.categories.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      _CategoryScroller(
-                        categories: state.categories,
-                        selectedCategoryId: _categoryId,
-                        onSelected: _selectCategory,
-                      ),
-                    ],
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
-                      child: _ListHeader(
-                        title: 'Riwayat Transaksi',
-                        subtitle: '${transactions.length} transaksi ditemukan',
+                        selectedCategory: selectedCategory,
                         onFilterTap: () => _openFilterSheet(state.categories),
+                        onShareTap: () => _shareExcelReport(
+                          transactions: transactions,
+                          filterLabel: _filterLabel(state.categories),
+                          totalIncome: totalIncome,
+                          totalExpense: totalExpense,
+                          netBalance: netBalance,
+                        ),
+                        onAddTap: () => _openForm(),
+                        onScanTap: () => _openForm(startWithOcr: true),
                       ),
                     ),
-                    if (transactions.isEmpty)
-                      _EmptyTransactions(onAddTap: () => _openForm())
-                    else
-                      Container(
-                        padding: EdgeInsetsDirectional.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: isDark
-                                ? const [
-                                    Color(0xFF101820),
-                                    Color(0xFF173444),
-                                    Color(0xFF15616E),
-                                  ]
-                                : const [
-                                    Color(0xFF25A8E0),
-                                    Color(0xFF43B7D8),
-                                    Color(0xFF72D9C6),
-                                  ],
-                          ),
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(34),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorScheme.primary.withValues(
-                                alpha: isDark ? 0.14 : 0.2,
-                              ),
-                              blurRadius: 28,
-                              offset: const Offset(0, 14),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                        child: _PeriodSelector(
+                          selectedPeriod: _period,
+                          onSelected: _selectPeriod,
+                        ),
+                      ),
+                    ),
+                    if (state.categories.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 14),
+                            _CategoryScroller(
+                              categories: state.categories,
+                              selectedCategoryId: _categoryId,
+                              onSelected: _selectCategory,
                             ),
                           ],
                         ),
-                        child: Column(
-                          children: [
-                            ...listChildren,
-                            const SizedBox(height: 120),
-                          ],
+                      ),
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _PinnedListHeaderDelegate(
+                        title: 'Riwayat Transaksi',
+                        subtitle: '${transactions.length} transaksi ditemukan',
+                        onFilterTap: () => _openFilterSheet(state.categories),
+                        topPadding: MediaQuery.of(context).padding.top,
+                      ),
+                    ),
+                    if (transactions.isEmpty)
+                      SliverToBoxAdapter(
+                        child: _EmptyTransactions(onAddTap: () => _openForm()),
+                      )
+                    else
+                      DecoratedSliver(
+                        decoration: _transactionListDecoration(
+                          colorScheme,
+                          isDark,
+                        ),
+                        sliver: SliverPadding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              if (index == transactionEntries.length) {
+                                return const SizedBox(height: 120);
+                              }
+
+                              final entry = transactionEntries[index];
+                              if (entry.date != null) {
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    10,
+                                    16,
+                                    8,
+                                  ),
+                                  child: _DateSectionHeader(date: entry.date!),
+                                );
+                              }
+
+                              final transaction = entry.transaction!;
+                              return Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  10,
+                                ),
+                                child: _PremiumTransactionTile(
+                                  transaction: transaction,
+                                  onTap: () =>
+                                      _showTransactionDetail(transaction),
+                                  onEdit: () =>
+                                      _openForm(transaction: transaction),
+                                  onDelete: () =>
+                                      _confirmDelete(transaction.id),
+                                ),
+                              );
+                            }, childCount: transactionEntries.length + 1),
+                          ),
                         ),
                       ),
-                    // ...listChildren,
+                    if (transactions.isEmpty)
+                      const SliverToBoxAdapter(child: SizedBox(height: 120)),
                   ],
                 ),
                 if (state.status == CubitStatus.loading)
@@ -184,6 +209,46 @@ class _TransactionsPageState extends State<TransactionsPage> {
     );
   }
 
+  BoxDecoration _transactionListDecoration(
+    ColorScheme colorScheme,
+    bool isDark,
+  ) {
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: isDark
+            ? const [Color(0xFF101820), Color(0xFF173444), Color(0xFF15616E)]
+            : const [Color(0xFF25A8E0), Color(0xFF43B7D8), Color(0xFF72D9C6)],
+      ),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
+      boxShadow: [
+        BoxShadow(
+          color: colorScheme.primary.withValues(alpha: isDark ? 0.14 : 0.2),
+          blurRadius: 28,
+          offset: const Offset(0, 14),
+        ),
+      ],
+    );
+  }
+
+  List<_TransactionListEntry> _buildTransactionEntries(
+    List<FinancialTransaction> transactions,
+  ) {
+    final entries = <_TransactionListEntry>[];
+    DateTime? activeDate;
+
+    for (final transaction in transactions) {
+      if (activeDate == null || !_isSameDay(activeDate, transaction.date)) {
+        activeDate = transaction.date;
+        entries.add(_TransactionListEntry.date(transaction.date));
+      }
+      entries.add(_TransactionListEntry.transaction(transaction));
+    }
+
+    return entries;
+  }
+
   double _sumByType(
     List<FinancialTransaction> transactions,
     TransactionType type,
@@ -195,38 +260,6 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
   FinanceCategory? _selectedCategory(List<FinanceCategory> categories) {
     return categories.where((item) => item.id == _categoryId).firstOrNull;
-  }
-
-  List<Widget> _buildTransactionSections(
-    List<FinancialTransaction> transactions,
-  ) {
-    final children = <Widget>[];
-    DateTime? activeDate;
-
-    for (final transaction in transactions) {
-      if (activeDate == null || !_isSameDay(activeDate, transaction.date)) {
-        activeDate = transaction.date;
-        children.add(
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-            child: _DateSectionHeader(date: transaction.date),
-          ),
-        );
-      }
-      children.add(
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-          child: _PremiumTransactionTile(
-            transaction: transaction,
-            onTap: () => _showTransactionDetail(transaction),
-            onEdit: () => _openForm(transaction: transaction),
-            onDelete: () => _confirmDelete(transaction.id),
-          ),
-        ),
-      );
-    }
-
-    return children;
   }
 
   bool _isSameDay(DateTime first, DateTime second) {
@@ -842,6 +875,15 @@ class _TransactionsPageState extends State<TransactionsPage> {
   }
 }
 
+class _TransactionListEntry {
+  const _TransactionListEntry.date(this.date) : transaction = null;
+
+  const _TransactionListEntry.transaction(this.transaction) : date = null;
+
+  final DateTime? date;
+  final FinancialTransaction? transaction;
+}
+
 class _TransactionsHero extends StatelessWidget {
   const _TransactionsHero({
     required this.filterLabel,
@@ -1429,18 +1471,22 @@ class _ListHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: 3),
               Text(
                 subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
@@ -1458,6 +1504,59 @@ class _ListHeader extends StatelessWidget {
   }
 }
 
+class _PinnedListHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _PinnedListHeaderDelegate({
+    required this.title,
+    required this.subtitle,
+    required this.onFilterTap,
+    required this.topPadding,
+  });
+
+  final String title;
+  final String subtitle;
+  final VoidCallback onFilterTap;
+  final double topPadding;
+  static const double _headerBodyHeight = 86;
+
+  @override
+  double get minExtent => topPadding + _headerBodyHeight;
+
+  @override
+  double get maxExtent => topPadding + _headerBodyHeight;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox.expand(
+      child: Material(
+        color: colorScheme.surface,
+        elevation: overlapsContent ? 3 : 0,
+        shadowColor: colorScheme.shadow.withValues(alpha: 0.18),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(18, topPadding + 22, 18, 14),
+          child: _ListHeader(
+            title: title,
+            subtitle: subtitle,
+            onFilterTap: onFilterTap,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _PinnedListHeaderDelegate oldDelegate) {
+    return title != oldDelegate.title ||
+        subtitle != oldDelegate.subtitle ||
+        onFilterTap != oldDelegate.onFilterTap ||
+        topPadding != oldDelegate.topPadding;
+  }
+}
+
 class _DateSectionHeader extends StatelessWidget {
   const _DateSectionHeader({required this.date});
 
@@ -1468,12 +1567,21 @@ class _DateSectionHeader extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
+        CircleAvatar(
+          child: const Icon(
+            Icons.date_range_rounded,
+            color: Color.fromARGB(255, 0, 0, 0),
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text("Filtering", style: TextStyle(color: Colors.white)),
+        const SizedBox(width: 5),
         Text(
           AppDateUtils.dayMonthYear(date),
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
         ),
         const SizedBox(width: 10),
-        Expanded(child: Divider(color: colorScheme.outlineVariant)),
+        // Expanded(child: Divider(color: colorScheme.outlineVariant)),
       ],
     );
   }
